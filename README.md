@@ -1,6 +1,6 @@
 # Hornet Helper
 
-A full-stack web application with a React frontend and Flask backend. The application features a responsive design with a navbar containing 5 categories and a home page. The color scheme is blue, red, and white, and it uses HashRouter for page navigation.
+A full-stack web application with a React frontend, Flask backend, and Firebase authentication. The application features a responsive design with categories including Calendar and AI Solutions. The color scheme is blue, red, and white, and it uses HashRouter for page navigation.
 
 ## Project Structure
 
@@ -8,20 +8,28 @@ A full-stack web application with a React frontend and Flask backend. The applic
 hornet-helper/
 ├── backend/             # Flask backend
 │   ├── app.py           # Main Flask application
+│   ├── firebase_service.py # Firebase Admin SDK service
 │   ├── requirements.txt # Python dependencies
-│   └── .gitignore       # Git ignore file for backend
+│   └── .gitignore      # Git ignore file for backend
 │
-└── frontend/            # React frontend
-    ├── public/          # Public assets
-    ├── src/             # Source code
-    │   ├── components/  # React components
-    │   ├── pages/       # Page components
-    │   ├── App.js       # Main App component
-    │   ├── App.css      # App styles
-    │   ├── index.js     # Entry point
-    │   └── index.css    # Global styles
-    ├── package.json     # NPM dependencies
-    └── .gitignore       # Git ignore file for frontend
+├── firebase/           # Firebase configuration
+│   ├── firestore.rules  # Firestore security rules
+│   └── service-account.example.json # Template for Firebase admin credentials
+│
+└── frontend/           # React frontend
+    ├── public/         # Public assets
+    ├── src/            # Source code
+    │   ├── components/ # React components
+    │   ├── contexts/   # React contexts
+    │   ├── pages/      # Page components
+    │   ├── App.js      # Main App component
+    │   ├── App.css     # App styles
+    │   ├── firebase.js # Firebase client configuration
+    │   ├── index.js    # Entry point
+    │   └── index.css   # Global styles
+    ├── .env.example    # Template for environment variables
+    ├── package.json    # NPM dependencies
+    └── .gitignore      # Git ignore file for frontend
 ```
 
 ## Getting Started
@@ -31,6 +39,25 @@ hornet-helper/
 - Node.js and npm (for the frontend)
 - Python 3.6+ (for the backend)
 - Git
+- Firebase account
+
+### Firebase Setup
+
+1. Create a new Firebase project:
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Click "Add project" and follow the setup wizard
+   - Enable Google Authentication in the Authentication section
+   - Create a Firestore database
+
+2. Get Firebase configuration:
+   - In Project Settings > General, scroll to "Your apps"
+   - Click the web icon (</>)
+   - Register your app and copy the Firebase configuration
+
+3. Set up Firebase Admin SDK:
+   - In Project Settings > Service accounts
+   - Click "Generate new private key"
+   - Save the JSON file as `firebase/hornethelper-[your-project-id]-firebase-adminsdk.json`
 
 ### Installation
 
@@ -40,7 +67,25 @@ hornet-helper/
    cd hornet-helper
    ```
 
-2. Set up the backend:
+2. Set up environment variables:
+   ```
+   # In frontend directory
+   cp .env.example .env
+   ```
+   Update .env with your Firebase configuration:
+   ```
+   REACT_APP_API_URL=http://localhost:8000
+   REACT_APP_FIREBASE_API_KEY=your_api_key
+   REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+   REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   REACT_APP_FIREBASE_APP_ID=your_app_id
+   REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   PORT=4000
+   ```
+
+3. Set up the backend:
    ```
    cd backend
    python -m venv venv
@@ -48,7 +93,7 @@ hornet-helper/
    pip install -r requirements.txt
    ```
 
-3. Set up the frontend:
+4. Set up the frontend:
    ```
    cd ../frontend
    npm install
@@ -62,101 +107,24 @@ hornet-helper/
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    python app.py
    ```
-   The backend will run on http://localhost:5000
+   The backend will run on http://localhost:8000
 
 2. In a new terminal, start the frontend development server:
    ```
    cd frontend
    npm start
    ```
-   The frontend will run on http://localhost:3001
-
-## Deploying to GitHub Pages
-
-### Step 1: Create a GitHub Repository
-
-1. Go to [GitHub](https://github.com) and sign in to your account.
-2. Click on the "+" icon in the top right corner and select "New repository".
-3. Name your repository (e.g., "hornet-helper").
-4. Choose whether to make it public or private.
-5. Click "Create repository".
-
-### Step 2: Push Your Code to GitHub
-
-1. Initialize Git in your project folder (if not already done):
-   ```
-   cd hornet-helper
-   git init
-   ```
-
-2. Add your files to Git:
-   ```
-   git add .
-   ```
-
-3. Commit your changes:
-   ```
-   git commit -m "Initial commit"
-   ```
-
-4. Link your local repository to the GitHub repository:
-   ```
-   git remote add origin https://github.com/yourusername/hornet-helper.git
-   ```
-
-5. Push your code to GitHub:
-   ```
-   git push -u origin main
-   ```
-   (Note: If your default branch is "master" instead of "main", use "master" instead)
-
-### Step 3: Configure for GitHub Pages
-
-1. Make sure your package.json has the following:
-   - The "homepage" field is set to "." (as it already is in this project)
-   - The "predeploy" and "deploy" scripts are included (already included in this project)
-
-2. Install gh-pages package (already included in the dependencies):
-   ```
-   cd frontend
-   npm install gh-pages --save-dev
-   ```
-
-### Step 4: Deploy to GitHub Pages
-
-1. Build and deploy your React app:
-   ```
-   cd frontend
-   npm run deploy
-   ```
-
-2. Go to your GitHub repository settings:
-   - Navigate to your repository on GitHub
-   - Click on "Settings"
-   - Scroll down to the "GitHub Pages" section
-   - In the "Source" dropdown, select "gh-pages branch"
-   - Click "Save"
-
-3. Your site will be published at: https://yourusername.github.io/hornet-helper
-
-### Step 5: Backend Deployment (Optional)
-
-For a full-stack application, you'll need to deploy the backend separately. Some options include:
-
-- Heroku
-- AWS
-- Google Cloud Platform
-- DigitalOcean
-
-After deploying the backend, update the API endpoint URLs in your frontend code to point to your deployed backend instead of localhost.
+   The frontend will run on http://localhost:4000
 
 ## Features
 
+- User authentication with Google Sign-In
+- Protected routes requiring authentication
+- User profiles with major field
+- Calendar functionality
+- AI solutions category
 - Responsive design that works on desktop and mobile
 - Navigation with HashRouter
-- 5 category pages plus a home page
-- AI category with custom styling
-- Blue, red, and white color scheme
 - Flask backend with API endpoints
 - React frontend with Axios for API calls
 
@@ -165,12 +133,40 @@ After deploying the backend, update the API endpoint URLs in your frontend code 
 - Frontend:
   - React
   - React Router (HashRouter)
+  - Firebase Authentication
   - Axios
-  - CSS (no Tailwind)
+  - CSS
 
 - Backend:
   - Flask
   - Flask-CORS
+  - Firebase Admin SDK
+  - Firestore
+
+## Accessing from Other Devices
+
+1. Update the frontend API URL:
+   - If running on your local network, update REACT_APP_API_URL in .env to use your computer's local IP:
+     ```
+     REACT_APP_API_URL=http://your_local_ip:8000
+     ```
+   - If deployed, update to your backend server's URL
+
+2. Update backend CORS settings:
+   - The backend is configured to accept requests from http://localhost:4000
+   - Add additional origins in app.py if needed:
+     ```python
+     CORS(app, resources={
+         r"/api/*": {
+             "origins": ["http://localhost:4000", "http://your_local_ip:4000"]
+         }
+     })
+     ```
+
+3. Firewall and Network Settings:
+   - Ensure ports 8000 (backend) and 4000 (frontend) are accessible
+   - Configure your firewall to allow incoming connections on these ports
+   - For development, make sure devices are on the same network
 
 ## License
 
