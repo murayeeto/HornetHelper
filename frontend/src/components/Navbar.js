@@ -4,6 +4,9 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './Navbar.css';
 
+// Default profile picture
+const DEFAULT_PROFILE_PIC = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
+
 const Navbar = () => {
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,7 +20,6 @@ const Navbar = () => {
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback categories if API fails
         setCategories([
           { id: 'category1', name: 'Category 1' },
           { id: 'category2', name: 'Category 2' },
@@ -38,7 +40,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Failed to log out:', error);
     }
@@ -62,19 +64,7 @@ const Navbar = () => {
         </div>
 
         <ul className={isMenuOpen ? 'nav-menu active' : 'nav-menu'}>
-          {user && (
-            <li className="nav-item">
-              <NavLink 
-                to="/" 
-                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </NavLink>
-            </li>
-          )}
-          
-          {user && categories.map((category) => (
+          {categories.map((category) => (
             <li key={category.id} className="nav-item">
               <NavLink 
                 to={`/${category.id}`} 
@@ -86,25 +76,32 @@ const Navbar = () => {
             </li>
           ))}
 
-          <li className="nav-item auth-item">
-            {user ? (
+          {user && (
+            <li className="nav-item auth-item">
               <div className="user-info">
-                <span className="user-name">{user.displayName}</span>
-                <span className="user-major">{user.major}</span>
+                <NavLink to="/account" className="user-profile">
+                  <img 
+                    src={user.photoURL || DEFAULT_PROFILE_PIC} 
+                    alt="Profile" 
+                    className="profile-picture"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = DEFAULT_PROFILE_PIC;
+                    }}
+                  />
+                  <span className="user-name">{user.displayName}</span>
+                </NavLink>
+                {user.major && (
+                  <span className={`user-major ${user.major === 'non denominated' ? 'non-denominated' : ''}`}>
+                    {user.major === 'non denominated' ? 'Major not set' : user.major}
+                  </span>
+                )}
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>
               </div>
-            ) : (
-              <NavLink 
-                to="/login" 
-                className="nav-link login-btn"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </NavLink>
-            )}
-          </li>
+            </li>
+          )}
         </ul>
       </div>
     </nav>

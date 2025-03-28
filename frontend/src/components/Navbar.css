@@ -81,6 +81,9 @@
 /* Auth styles */
 .auth-item {
   margin-left: auto;
+  height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .user-info {
@@ -90,9 +93,41 @@
   padding: 0 1rem;
 }
 
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-profile:hover .user-name {
+  color: var(--light-red);
+}
+
+.profile-picture {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-profile:hover .profile-picture {
+  border-color: var(--light-red);
+}
+
 .user-name {
   color: var(--primary-white);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .user-major {
@@ -101,6 +136,13 @@
   padding: 0.2rem 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.user-major.non-denominated {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.05);
+  font-style: italic;
 }
 
 .logout-btn {
@@ -117,19 +159,6 @@
 .logout-btn:hover {
   background: var(--primary-red);
   color: var(--primary-white);
-}
-
-.login-btn {
-  background: var(--primary-red);
-  color: var(--primary-white);
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.login-btn:hover {
-  background: var(--light-red);
 }
 
 .menu-icon {
@@ -234,6 +263,7 @@
 
   .auth-item {
     margin-left: 0;
+    height: auto;
   }
 
   .user-info {
@@ -242,13 +272,18 @@
     padding: 1rem;
   }
 
+  .user-profile {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-picture {
+    width: 40px;
+    height: 40px;
+  }
+
   .logout-btn {
     width: 100%;
     margin-top: 0.5rem;
-  }
-
-  .login-btn {
-    width: 100%;
-    margin: 1rem;
   }
 }

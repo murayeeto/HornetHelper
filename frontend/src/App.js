@@ -14,6 +14,7 @@ import Category2 from './pages/Category2';
 import Category3 from './pages/Category3';
 import Calendar from './pages/Calendar';
 import AI from './pages/AI';
+import Account from './pages/Account';
 
 // Auth Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -72,6 +73,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <AI />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/account" 
+                element={
+                  <PrivateRoute>
+                    <Account />
                   </PrivateRoute>
                 } 
               />
