@@ -5,7 +5,7 @@ import firebase_service
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
+#test
 # Authentication middleware
 def require_auth(f):
     @wraps(f)
