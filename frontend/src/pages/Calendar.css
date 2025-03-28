@@ -1,0 +1,99 @@
+/* Exact 80% Calendar */
+.calendar-exact {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .calendar-header-exact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #4a6fa5;
+    color: white;
+  }
+  
+  .calendar-header-exact button {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 50px;
+    transition: background 0.2s;
+  }
+  
+  .calendar-header-exact button:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  
+  .calendar-header-exact h2 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  
+  .calendar-grid-exact {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    flex-grow: 1;
+    padding: 10px;
+  }
+  
+  .day-header-exact {
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    background: #f5f5f5;
+  }
+  
+  .day-cell-exact {
+    border: 1px solid #e0e0e0;
+    padding: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .day-cell-exact.empty {
+    border: none;
+    background: transparent;
+  }
+  
+  .day-cell-exact.today {
+    background: #fff8e1;
+    border: 2px solid #ffc107;
+  }
+  
+  .day-cell-exact[data-weekend="true"] {
+    background: #f9f9f9;
+  }
+  
+  .day-number-exact {
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+  }
+  
+  /* Print styles */
+  @media print {
+    .calendar-exact {
+      box-shadow: none;
+      position: static;
+      transform: none;
+      width: 100% !important;
+      height: auto !important;
+      page-break-after: always;
+    }
+  }
