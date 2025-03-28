@@ -1,10 +1,16 @@
 # Node.js
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-package-lock.json
-.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 
 # Python
 __pycache__/
@@ -12,7 +18,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -24,19 +29,48 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
 
-# Virtual Environment
-venv/
-ENV/
+# Environment variables
 .env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
 .venv
 env/
+venv/
+ENV/
 env.bak/
 venv.bak/
-pythonenv*
+
+# Firebase
+firebase/
+**/firebase-adminsdk*.json
+**/firebase.js
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
 
 # IDE
 .idea/
@@ -45,12 +79,20 @@ pythonenv*
 *.swo
 .project
 .classpath
-.c9/
-*.launch
 .settings/
 *.sublime-workspace
+*.sublime-project
 
-# OS specific
+# Build
+/build/
+/dist/
+/.next/
+/out/
+.nuxt
+.docz
+.cache/
+
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -58,14 +100,6 @@ pythonenv*
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Build and distribution
-/build/
-/dist/
-/.next/
-/out/
-.nuxt
-.cache/
 
 # Logs
 logs
@@ -75,8 +109,17 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Environment variables
-.env
+# Testing
+/coverage
+.nyc_output
+.jest
+
+# Misc
+.tmp
+.temp
+*.bak
+*.backup
+*.old
 .env.local
 .env.development.local
 .env.test.local
