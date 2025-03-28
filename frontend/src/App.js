@@ -6,6 +6,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import PrivateRoute from './components/PrivateRoute';
+import Footer from './components/Footer';
 
 // Pages
 import Home from './pages/Home';
@@ -15,6 +16,7 @@ import Category3 from './pages/Category3';
 import Calendar from './pages/Calendar';
 import AI from './pages/AI';
 import Account from './pages/Account';
+
 
 // Auth Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -86,6 +88,7 @@ function App() {
               />
             </Routes>
           </div>
+          <Footer></Footer>
         </div>
       </HashRouter>
     </AuthProvider>
