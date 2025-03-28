@@ -19,7 +19,7 @@ const Navbar = () => {
           { id: 'category1', name: 'Category 1' },
           { id: 'category2', name: 'Category 2' },
           { id: 'category3', name: 'Category 3' },
-          { id: 'category4', name: 'Category 4' },
+          { id: 'calendar', name: 'Calendar' },
           { id: 'ai', name: 'AI Solutions' }
         ]);
       }
