@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
   const [homeData, setHomeData] = useState({
@@ -8,6 +9,8 @@ const Home = () => {
     description: 'Your one-stop solution for all your needs'
   });
   const [loading, setLoading] = useState(true);
+  const [major, setMajor] = useState('');
+  const { user, signInWithGoogle, updateMajor } = useAuth();
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -24,6 +27,36 @@ const Home = () => {
     fetchHomeData();
   }, []);
 
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Failed to sign in with Google:', error);
+    }
+  };
+
+  const handleMajorSubmit = async (e) => {
+    e.preventDefault();
+    if (!major.trim()) return;
+
+    try {
+      await updateMajor(major.trim());
+      setMajor('');
+    } catch (error) {
+      console.error('Failed to update major:', error);
+    }
+  };
+
+  const handleSkipMajor = async () => {
+    try {
+      await updateMajor('non denominated');
+    } catch (error) {
+      console.error('Failed to set default major:', error);
+    }
+  };
+
+  const showMajorInput = user && (!user.major || user.major === 'non denominated');
+
   if (loading) {
     return (
       <div className="loading">
@@ -38,7 +71,34 @@ const Home = () => {
       <section className="hero-section">
         <h1>{homeData.title}</h1>
         <p>{homeData.description}</p>
-        <Link to="/category1" className="btn btn-secondary">Explore Categories</Link>
+        {!user ? (
+          <button onClick={handleGoogleSignIn} className="btn btn-primary google-signin">
+            Login to Get Started
+          </button>
+        ) : showMajorInput ? (
+          <div className="major-section">
+            <form onSubmit={handleMajorSubmit} className="major-form-hero">
+              <input
+                type="text"
+                placeholder="Enter your major"
+                value={major}
+                onChange={(e) => setMajor(e.target.value)}
+                className="major-input-hero"
+              />
+              <button type="submit" className="btn btn-primary">
+                Set Major
+              </button>
+            </form>
+            {!user.major && (
+              <>
+                <button onClick={handleSkipMajor} className="btn btn-secondary skip-major">
+                  Skip for Now
+                </button>
+                <p className="major-note">You can continue using the website without setting your major</p>
+              </>
+            )}
+          </div>
+        ) : null}
       </section>
 
       <section className="section">
@@ -69,10 +129,75 @@ const Home = () => {
           <Link to="/category1" className="btn btn-primary">Category 1</Link>
           <Link to="/category2" className="btn btn-primary">Category 2</Link>
           <Link to="/category3" className="btn btn-primary">Category 3</Link>
-          <Link to="/category4" className="btn btn-primary">Category 4</Link>
+          <Link to="/calendar" className="btn btn-primary">Calendar</Link>
           <Link to="/ai" className="btn btn-secondary">AI Solutions</Link>
         </div>
       </section>
+
+      <style jsx>{`
+        .major-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+
+        .major-form-hero {
+          display: flex;
+          gap: 1rem;
+          width: 100%;
+        }
+
+        .major-input-hero {
+          flex: 1;
+          padding: 0.8rem 1rem;
+          border: none;
+          border-radius: 4px;
+          font-size: 1rem;
+          background: white;
+          color: #333;
+        }
+
+        .major-input-hero:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.5);
+        }
+
+        .skip-major {
+          width: 100%;
+          background: transparent;
+          border: 2px solid #4285f4;
+          color: #4285f4;
+        }
+
+        .skip-major:hover {
+          background: rgba(66, 133, 244, 0.1);
+        }
+
+        .major-note {
+          color: #666;
+          font-size: 0.9rem;
+          text-align: center;
+          margin-top: 0.5rem;
+        }
+
+        .google-signin {
+          padding: 0.8rem 2rem;
+          font-size: 1.1rem;
+          background: white;
+          color: #4285f4;
+          border: none;
+          transition: all 0.3s ease;
+        }
+
+        .google-signin:hover {
+          background: #4285f4;
+          color: var(--primary-red);
+          box-shadow: 0 0 15px rgba(66, 133, 244, 0.5);
+        }
+      `}</style>
     </div>
   );
 };
