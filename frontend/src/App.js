@@ -4,6 +4,8 @@ import './App.css';
 
 // Components
 import Navbar from './components/Navbar';
+import Login from './components/Login';
+import PrivateRoute from './components/PrivateRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -15,23 +17,71 @@ import Category4 from './pages/Category4';
 import AI from './pages/AI';
 import Calendar from './pages/Calendar';
 
+// Auth Context
+import { AuthProvider } from './contexts/AuthContext';
+
 function App() {
   return (
-    <HashRouter>
-      <div className="App">
-        <Navbar />
-        <div className="container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/category1" element={<Category1 />} />
-            <Route path="/category2" element={<Category2 />} />
-            <Route path="/category3" element={<Category3 />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/ai" element={<AI />} />
-          </Routes>
+    <AuthProvider>
+      <HashRouter>
+        <div className="App">
+          <Navbar />
+          <div className="container">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route 
+                path="/" 
+                element={
+                  <PrivateRoute>
+                    <Home />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/category1" 
+                element={
+                  <PrivateRoute>
+                    <Category1 />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/category2" 
+                element={
+                  <PrivateRoute>
+                    <Category2 />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/category3" 
+                element={
+                  <PrivateRoute>
+                    <Category3 />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/category4" 
+                element={
+                  <PrivateRoute>
+                    <Category4 />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/ai" 
+                element={
+                  <PrivateRoute>
+                    <AI />
+                  </PrivateRoute>
+                } 
+              />
+            </Routes>
+          </div>
         </div>
-      </div>
-    </HashRouter>
+      </HashRouter>
+    </AuthProvider>
   );
 }
 

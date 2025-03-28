@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import './Navbar.css';
 
 const Navbar = () => {
   const [categories, setCategories] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -32,6 +35,15 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+    }
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -50,17 +62,19 @@ const Navbar = () => {
         </div>
 
         <ul className={isMenuOpen ? 'nav-menu active' : 'nav-menu'}>
-          <li className="nav-item">
-            <NavLink 
-              to="/" 
-              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </NavLink>
-          </li>
+          {user && (
+            <li className="nav-item">
+              <NavLink 
+                to="/" 
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </NavLink>
+            </li>
+          )}
           
-          {categories.map((category) => (
+          {user && categories.map((category) => (
             <li key={category.id} className="nav-item">
               <NavLink 
                 to={`/${category.id}`} 
@@ -71,6 +85,26 @@ const Navbar = () => {
               </NavLink>
             </li>
           ))}
+
+          <li className="nav-item auth-item">
+            {user ? (
+              <div className="user-info">
+                <span className="user-name">{user.displayName}</span>
+                <span className="user-major">{user.major}</span>
+                <button onClick={handleLogout} className="logout-btn">
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <NavLink 
+                to="/login" 
+                className="nav-link login-btn"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Login
+              </NavLink>
+            )}
+          </li>
         </ul>
       </div>
     </nav>

@@ -1,3 +1,5 @@
-Flask==2.0.1
+Flask==2.3.3
 Flask-Cors==3.0.10
+Werkzeug==2.3.7
+watchdog==3.0.0
 gunicorn==20.1.0
