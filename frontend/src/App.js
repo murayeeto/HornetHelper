@@ -12,10 +12,8 @@ import Home from './pages/Home';
 import Category1 from './pages/Category1';
 import Category2 from './pages/Category2';
 import Category3 from './pages/Category3';
-import Category4 from './pages/Category4';
-//import SignIn from './pages/SignIn';
-import AI from './pages/AI';
 import Calendar from './pages/Calendar';
+import AI from './pages/AI';
 
 // Auth Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -62,13 +60,13 @@ function App() {
                 } 
               />
               <Route 
-                path="/category4" 
+                path="/calendar" 
                 element={
                   <PrivateRoute>
-                    <Category4 />
+                    <Calendar />
                   </PrivateRoute>
                 } 
-              />
+              />           
               <Route 
                 path="/ai" 
                 element={

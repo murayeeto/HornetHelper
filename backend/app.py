@@ -5,7 +5,7 @@ import firebase_service
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-#test
+
 # Authentication middleware
 def require_auth(f):
     @wraps(f)
@@ -54,9 +54,9 @@ data = {
         "title": "Category 3",
         "items": ["Product X", "Product Y", "Product Z"]
     },
-    "category4": {
-        "title": "Category 4",
-        "items": ["Service 1", "Service 2", "Service 3"]
+    "calendar": {
+        "title": "Calendar",
+        "items": ["View Events", "Add Event", "Manage Schedule"]
     },
     "ai": {
         "title": "AI Solutions",
@@ -102,7 +102,7 @@ def get_categories():
         {"id": "category1", "name": "Category 1"},
         {"id": "category2", "name": "Category 2"},
         {"id": "category3", "name": "Category 3"},
-        {"id": "category4", "name": "Category 4"},
+        {"id": "calendar", "name": "Calendar"},
         {"id": "ai", "name": "AI Solutions"}
     ]
     return jsonify(categories)
@@ -117,4 +117,4 @@ def server_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)  # Changed port to 8000
+    app.run(debug=True, port=8000)
