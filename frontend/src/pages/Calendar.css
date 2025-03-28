@@ -1,17 +1,16 @@
 /* Calendar Container */
+/* Remove fixed positioning from calendar container */
 .calendar-exact-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Changed from center to flex-start */
   overflow: auto;
   background: #f5f5f5;
   padding: 20px;
+  min-height: calc(100vh - 120px); /* Adjust based on header/footer height */
 }
+
+/* Keep all other calendar styles the same */
 
 .calendar-exact {
   background: white;

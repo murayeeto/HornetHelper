@@ -79,7 +79,7 @@ function App() {
               />
             </Routes>
           </div>
-          <Footer />
+          <Footer></Footer>
         </div>
       </HashRouter>
     </AuthProvider>
