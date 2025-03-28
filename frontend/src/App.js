@@ -26,7 +26,7 @@ function App() {
             <Route path="/category1" element={<Category1 />} />
             <Route path="/category2" element={<Category2 />} />
             <Route path="/category3" element={<Category3 />} />
-            <Route path="/category4" element={<Calendar />} />
+            <Route path="/calendar" element={<Calendar />} />
             <Route path="/ai" element={<AI />} />
           </Routes>
         </div>
