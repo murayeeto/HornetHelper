@@ -17,7 +17,6 @@
   align-items: center;
   width: 100vw;
   /* max-width: 1200px; */
-  padding: 0 20px;
 }
 
 .navbar-logo {
@@ -312,7 +311,6 @@
 .logo-image {
   height: 8rem; /* Increased from 2.5rem (adjust this number as needed) */
   width: auto;
-  margin-right: 0.75rem;
   object-fit: contain;
 }
 
@@ -321,6 +319,7 @@
 .logo-text {
   font-size: 1.5rem; /* Slightly larger to match bigger logo */
   /* Keep all other properties the same */
+  width: 1rem;
 }
 
 /* Update responsive sizes proportionally */
