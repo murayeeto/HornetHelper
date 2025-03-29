@@ -8,7 +8,7 @@ Requires API keys to be set in .env file:
 
 import os
 import openai
-import pandas as pd
+#import pandas as pd
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 
