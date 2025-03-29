@@ -101,6 +101,7 @@ const Faq = () => {
     };
 
     fetchFaqData();
+    window.scrollTo(0,0);
   }, []);
 
   useEffect(() => {
