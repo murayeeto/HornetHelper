@@ -104,14 +104,14 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      <section className="hero-section">
+      <section className="hero-section" style={{backgroundColor: 'white'}}>
         <div className="hero-content">
           <div className="hero-text">
             <h1>{homeData.title}</h1>
             <p>{homeData.description}</p>
             {!user && (
               <button onClick={handleGoogleSignIn} className="google-signin">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png" alt="Google" />
                 Continue with Google
               </button>
             )}
@@ -187,7 +187,9 @@ const Home = () => {
               <Link to="/studywithbuddy" className="home-feature-btn study">Get Started</Link>
             </div>
             <div className="home-feature-card">
-              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAABuFJREFUeJzt3V2IXGcZx/Hfc2Z2Z3c2u9lNYpqkSWxTm6Y2VWyxxYsW8QO0iqAXghfeiQoKXnkjKHjhhYKgqHgjKIJY8EJEEMUPVGqRWluTYJM0/UjzZZPd7O7s7MzOzDkPXkRr2t2Zd2fOec97/r8fWEh2z3nPf+Z5z5yZOWcGRERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER" alt="AI" />
+              <div className='robot-container'>
+              <img src="https://entwickler.de/wp-content/uploads/2024/08/platform24_FSLE_OpenAI_Illustration_b.svg" alt="AI" className='home-feature-card-robot-image'/>
+              </div>
               <h3>Get AI Powered Recommendations</h3>
               <Link to="/faq#ai-demo" className="home-feature-btn ai">Get Started</Link>
             </div>

@@ -225,6 +225,7 @@
     opacity: 1;
     transition: all 0.5s ease;
     background: var(--dark-blue);
+    padding-top: 5rem;
   }
 
   .nav-menu.active {
@@ -236,15 +237,14 @@
 
   .nav-item {
     height: 60px;
-    width: 100%;
+    width: auto;
   }
 
-  .nav-link {
-    text-align: center;
-    padding: 1.5rem;
-    width: 100%;
-    display: table;
+  .nav-link{
+    height: auto;
+    padding: .65rem;
   }
+
 
   .nav-link:hover {
     color: var(--primary-red);
@@ -309,16 +309,17 @@
 }
 
 .logo-image {
-  height: 8rem; /* Increased from 2.5rem (adjust this number as needed) */
+  height: 8rem; 
+  min-height: 8rem !important;
   width: auto;
   object-fit: contain;
+  margin-right: -5px;
 }
 
 
 
 .logo-text {
   font-size: 1.5rem; /* Slightly larger to match bigger logo */
-  /* Keep all other properties the same */
   width: 1rem;
 }
 
