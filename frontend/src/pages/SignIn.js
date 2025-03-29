@@ -112,22 +112,22 @@ function SignIn() {
               />
             </>
           )}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="auth-button"
             disabled={loading}
           >
             {loading ? 'Loading...' : (isSignIn ? 'Sign In' : 'Sign Up')}
           </button>
         </form>
-        <button 
-          onClick={handleGoogleSignIn} 
+        <button
+          onClick={handleGoogleSignIn}
           className="google-auth-button"
           disabled={loading}
         >
-          <img 
-            alt="Google logo" 
-            className="google-icon" 
+          <img
+            alt="Google logo"
+            className="google-icon"
           />
           Continue with Google
         </button>
