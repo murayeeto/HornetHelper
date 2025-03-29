@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './Account.css';
 
@@ -58,17 +58,12 @@ const Account = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
-    setMessage('');
-
     try {
       setIsUploading(true);
       setMessage('Uploading photo...');
-      console.log('Starting upload process...');
 
       await updateProfilePicture(file);
       
-      console.log('Upload completed successfully');
       setMessage('Profile picture updated successfully!');
       
       // Clear the file input
@@ -82,6 +77,14 @@ const Account = () => {
       setIsUploading(false);
     }
   };
+
+  // Update local state when user data changes
+  useEffect(() => {
+    if (user) {
+      setMajor(user.major || '');
+      setDisplayName(user.displayName || '');
+    }
+  }, [user]);
 
   if (!user) {
     return <div className="account-page">Please log in to view your account.</div>;
@@ -100,6 +103,7 @@ const Account = () => {
               style={{ cursor: isUploading ? 'wait' : 'pointer' }}
             >
               <img 
+                key={user.photoURL} // Force re-render when URL changes
                 src={user.photoURL || DEFAULT_PROFILE_PIC} 
                 alt="Profile" 
                 className="profile-picture-large"
