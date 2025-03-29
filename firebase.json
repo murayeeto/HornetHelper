@@ -1,0 +1,10 @@
+{
+  "storage": {
+    "cors": [{
+      "origin": ["http://localhost:4000"],
+      "method": ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+      "maxAgeSeconds": 3600,
+      "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "X-Requested-With"]
+    }]
+  }
+}

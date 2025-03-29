@@ -11,10 +11,15 @@ from ai_utils import get_ai_response, get_video_recommendation
 
 app = Flask(__name__)
 
-# Configure CORS to only allow requests from our frontend
+# Configure CORS to allow requests from both local and deployed frontend
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:4000"],  # Only allow the frontend port
+        "origins": [
+            "http://localhost:4000",
+            "https://localhost:4000",
+            "https://hornethelper-36e05.firebaseapp.com",
+            "https://hornethelper-36e05.web.app"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "expose_headers": ["Content-Type"],

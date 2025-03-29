@@ -178,10 +178,15 @@ export function AuthProvider({ children }) {
       const newImagePath = `images/${user.uid}/profile/${timestamp}_${file.name}`;
       const newRef = ref(firebase.storage, newImagePath);
       
-      // Set proper metadata
+      // Set proper metadata with CORS configuration
       const metadata = {
         contentType: file.type,
-        cacheControl: 'public, max-age=31536000'
+        cacheControl: 'public, max-age=31536000',
+        customMetadata: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
       };
 
       // Upload the new file

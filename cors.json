@@ -1,0 +1,11 @@
+[{
+  "origin": [
+    "http://localhost:4000",
+    "https://localhost:4000",
+    "https://hornethelper-36e05.firebaseapp.com",
+    "https://hornethelper-36e05.web.app"
+  ],
+  "method": ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+  "maxAgeSeconds": 3600,
+  "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "X-Requested-With"]
+}]
