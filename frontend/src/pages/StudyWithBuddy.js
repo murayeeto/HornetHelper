@@ -4,6 +4,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+import { FaComments } from 'react-icons/fa';
+import ChatWindow from '../components/ChatWindow';
 import {
     collection,
     addDoc,
@@ -70,6 +72,7 @@ function DuoSessions({ setScreen }) {
     const [sessions, setSessions] = useState([]);
     const [filteredSessions, setFilteredSessions] = useState([]);
     const [showFiltered, setShowFiltered] = useState(false);
+    const [activeChatSession, setActiveChatSession] = useState(null);
 
     const fetchSessions = async () => {
         try {
@@ -444,9 +447,31 @@ function DuoSessions({ setScreen }) {
                                 <div className="participants-list">
                                     <div className="participants-header">
                                         <h4>Participants:</h4>
-                                        {session.full && (
-                                            <span className="session-status full">Session Full</span>
-                                        )}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <button
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    cursor: 'pointer',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
+                                                    color: activeChatSession === session.id ? 'white' : 'inherit',
+                                                    border: 'none',
+                                                    fontSize: 'inherit'
+                                                }}
+                                                onClick={() => setActiveChatSession(activeChatSession === session.id ? null : session.id)}
+                                            >
+                                                <FaComments
+                                                    className="chat-icon"
+                                                    style={{ fontSize: '20px' }}
+                                                />
+                                            </button>
+                                            {session.full && (
+                                                <span className="session-status full">Session Full</span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="participant-grid">
                                         {session.participants?.map(participant => (
@@ -517,6 +542,28 @@ function DuoSessions({ setScreen }) {
             <button className="back-button" onClick={() => setScreen("home")}>
                 Back to Home
             </button>
+            
+            {activeChatSession && (
+                <>
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            zIndex: 999
+                        }}
+                        onClick={() => setActiveChatSession(null)}
+                    />
+                    <ChatWindow
+                        sessionId={activeChatSession}
+                        isOpen={true}
+                        onClose={() => setActiveChatSession(null)}
+                    />
+                </>
+            )}
         </div>
     );
 }
@@ -534,6 +581,7 @@ function GroupSessions({ setScreen }) {
     const [filteredSessions, setFilteredSessions] = useState([]);
     const [showFiltered, setShowFiltered] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
+    const [activeChatSession, setActiveChatSession] = useState(null);
 
     const fetchSessions = async () => {
         try {
@@ -916,25 +964,49 @@ function GroupSessions({ setScreen }) {
                                         />
                                         <h3 style={{ margin: 0 }}>{session.displayName}</h3>
                                     </div>
-                                    <div
-                                        className="capacity-indicator"
-                                        onClick={(e) => handleCapacityClick(session, e)}
-                                        style={{
-                                            backgroundColor: (() => {
-                                                const fillPercentage = (participantCount / session.capacity) * 100;
-                                                if (fillPercentage >= 75) return '#ff6b6b';  // Red
-                                                if (fillPercentage >= 50) return '#ffd93d';  // Yellow
-                                                return '#4BC0C0';  // Green
-                                            })(),
-                                            color: 'white',
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold',
-                                            textShadow: '0px 1px 2px rgba(0,0,0,0.2)'
-                                        }}
-                                    >
-                                        {participantCount}/{session.capacity}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '5px',
+                                                cursor: 'pointer',
+                                                padding: '5px 10px',
+                                                borderRadius: '4px',
+                                                backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
+                                                color: activeChatSession === session.id ? 'white' : 'inherit',
+                                                marginRight: '10px'
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveChatSession(activeChatSession === session.id ? null : session.id);
+                                            }}
+                                        >
+                                            <FaComments
+                                                className="chat-icon"
+                                                style={{ fontSize: '20px' }}
+                                            />
+                                        </div>
+                                        <div
+                                            className="capacity-indicator"
+                                            onClick={(e) => handleCapacityClick(session, e)}
+                                            style={{
+                                                backgroundColor: (() => {
+                                                    const fillPercentage = (participantCount / session.capacity) * 100;
+                                                    if (fillPercentage >= 75) return '#ff6b6b';  // Red
+                                                    if (fillPercentage >= 50) return '#ffd93d';  // Yellow
+                                                    return '#4BC0C0';  // Green
+                                                })(),
+                                                color: 'white',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold',
+                                                textShadow: '0px 1px 2px rgba(0,0,0,0.2)'
+                                            }}
+                                        >
+                                            {participantCount}/{session.capacity}
+                                        </div>
                                     </div>
                                 </div>
                                 <p>Course: {session.course}</p>
@@ -1014,6 +1086,28 @@ function GroupSessions({ setScreen }) {
             <button className="back-button" onClick={() => setScreen("home")}>
                 Back to Home
             </button>
+
+            {activeChatSession && (
+                <>
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            zIndex: 999
+                        }}
+                        onClick={() => setActiveChatSession(null)}
+                    />
+                    <ChatWindow
+                        sessionId={activeChatSession}
+                        isOpen={true}
+                        onClose={() => setActiveChatSession(null)}
+                    />
+                </>
+            )}
         </div>
     );
 }
