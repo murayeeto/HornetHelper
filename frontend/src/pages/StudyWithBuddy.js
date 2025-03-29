@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import firebase from '../firebase';
 import dsuCampusLocations from '../data/dsuCampusLocations';
+import departmentsAndMajors from '../data/departmentsAndMajors';
 
 function HomeScreen({ setScreen }) {
     return (
@@ -54,12 +55,16 @@ function HomeScreen({ setScreen }) {
 
 function DuoSessions({ setScreen }) {
     const { user } = useAuth();
-    const [subject, setSubject] = useState("");
     const [dateTime, setDateTime] = useState("");
     const [location, setLocation] = useState("");
     const [selectedCourse, setSelectedCourse] = useState("");
+    const [selectedMajor, setSelectedMajor] = useState("");
+    const [selectedDepartment, setSelectedDepartment] = useState("");
     const [gender, setGender] = useState("");
     const [sessions, setSessions] = useState([]);
+
+    // Get all majors from all departments
+    const allMajors = Object.values(departmentsAndMajors).flat();
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -252,9 +257,9 @@ function DuoSessions({ setScreen }) {
         try {
             const sessionData = {
                 course: selectedCourse,
+                major: selectedMajor,
                 dateTime,
                 location,
-                subject: "",
                 gender,
                 userId: user.uid,
                 displayName: user.displayName,
@@ -283,10 +288,11 @@ function DuoSessions({ setScreen }) {
             }, ...prevSessions]);
 
             // Clear form
-            setSubject("");
             setDateTime("");
             setLocation("");
             setSelectedCourse("");
+            setSelectedMajor("");
+            setSelectedDepartment("");
             setGender("");
         } catch (error) {
             console.error("Error creating session:", error);
@@ -307,6 +313,20 @@ function DuoSessions({ setScreen }) {
                                 onChange={(e) => setSelectedCourse(e.target.value)}
                                 placeholder="Enter course (e.g. COMP 3700)"
                             />
+                        </div>
+                        <div className="form-group">
+                            <label>Major</label>
+                            <select
+                                value={selectedMajor}
+                                onChange={(e) => setSelectedMajor(e.target.value)}
+                            >
+                                <option value="">Select major</option>
+                                {allMajors.map(major => (
+                                    <option key={major} value={major}>
+                                        {major}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="form-group">
                             <label>Date/Time</label>
@@ -351,17 +371,17 @@ function DuoSessions({ setScreen }) {
 
             <div className="filters">
                 <div className="filter-group">
-                    <label>Subject:</label>
+                    <label>Department:</label>
                     <select
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
                     >
-                        <option value="">Select subject</option>
-                        <option value="computer-science">Computer Science</option>
-                        <option value="mathematics">Mathematics</option>
-                        <option value="physics">Physics</option>
-                        <option value="chemistry">Chemistry</option>
-                        <option value="biology">Biology</option>
+                        <option value="">Select department</option>
+                        {Object.keys(departmentsAndMajors).map(dept => (
+                            <option key={dept} value={dept}>
+                                {dept}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -407,7 +427,9 @@ function DuoSessions({ setScreen }) {
             <div className="session-section">
                 <h2>Available Study Sessions</h2>
                 <div className="session-cards">
-                    {sessions.map(session => {
+                    {sessions
+                        .filter(session => !selectedDepartment || departmentsAndMajors[selectedDepartment].includes(session.major))
+                        .map(session => {
                         const isParticipant = session.participants?.some(p => p.uid === user.uid);
                         return (
                             <div key={session.id} className="session-card">
@@ -418,6 +440,7 @@ function DuoSessions({ setScreen }) {
                                 />
                                 <h3>{session.displayName}</h3>
                                 <p>Course: {session.course}</p>
+                                <p>Major: {session.major}</p>
                                 <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
                                 <p>Place: {session.location}</p>
                                 <div className="participants-list">
