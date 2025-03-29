@@ -361,3 +361,71 @@
     width: 100%;
   }
 }
+
+/* Add these styles to your Calendar.css */
+
+/* Compact Event Previews */
+.day-events-preview {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 40px;
+  overflow: hidden;
+}
+
+.event-preview {
+  font-size: 0.6rem;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
+  max-width: 100%;
+  background-color: var(--event-color);
+  border-left: 3px solid color-mix(in srgb, var(--event-color) 80%, black);
+}
+
+.event-preview::before {
+  content: attr(data-time);
+  font-weight: bold;
+  margin-right: 4px;
+  opacity: 0.9;
+}
+
+/* Adjust day cell layout */
+.day-cell-exact {
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.day-number-exact {
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+  align-self: flex-start;
+}
+
+/* Today indicator adjustments */
+.today-indicator {
+  font-size: 0.6rem;
+  bottom: auto;
+  top: 2px;
+  right: 2px;
+  left: auto;
+}
+
+/* Weekend cell adjustments */
+.day-cell-exact[data-weekend="true"] {
+  background-color: #f5f5f5;
+}
+
+/* Hover state for more visibility */
+.day-cell-exact:hover .event-preview {
+  white-space: nowrap;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
