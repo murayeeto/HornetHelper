@@ -2,19 +2,73 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import departmentsAndMajors from '../data/departmentsAndMajors';
-
-// Flatten majors list
-const allMajors = Object.values(departmentsAndMajors).flat().sort();
+import { useSessionHandlers } from '../utils/sessionHandlers';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import firebase from '../firebase';
+import './Home.css';
 
 const Home = () => {
   const [homeData, setHomeData] = useState({
     title: 'Welcome to Hornet Helper',
-    description: 'Your one-stop solution for all your needs'
+    description: 'Find study partners, access recommended resources, and stay organized with our user-friendly platform. Your one-stop solution for all your needs!'
   });
   const [loading, setLoading] = useState(true);
-  const [major, setMajor] = useState('');
-  const { user, signInWithGoogle, updateMajor } = useAuth();
+  const [sessions, setSessions] = useState([]);
+  const { user, signInWithGoogle } = useAuth();
+  const { handleLeaveSession: handleLeaveDuoSession, handleDisbandSession: handleDisbandDuoSession } = useSessionHandlers(user, sessions.filter(s => s.type === 'duo'), setSessions, 'sessions');
+  const { handleLeaveSession: handleLeaveGroupSession, handleDisbandSession: handleDisbandGroupSession } = useSessionHandlers(user, sessions.filter(s => s.type === 'group'), setSessions, 'groupSessions');
+
+  const handleLeaveSession = async (sessionId) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session.type === 'duo') {
+      await handleLeaveDuoSession(sessionId);
+    } else {
+      await handleLeaveGroupSession(sessionId);
+    }
+    setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
+  };
+
+  const handleDisbandSession = async (sessionId) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session.type === 'duo') {
+      await handleDisbandDuoSession(sessionId);
+    } else {
+      await handleDisbandGroupSession(sessionId);
+    }
+    setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
+  };
+
+  useEffect(() => {
+    const fetchAllSessions = async () => {
+      try {
+        const sessionsRef = collection(firebase.db, 'sessions');
+        const sessionsQuery = query(sessionsRef, orderBy('createdAt', 'desc'));
+        const sessionsSnapshot = await getDocs(sessionsQuery);
+        const regularSessions = sessionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          type: 'duo',
+          ...doc.data()
+        }));
+
+        const groupSessionsRef = collection(firebase.db, 'groupSessions');
+        const groupSessionsQuery = query(groupSessionsRef, orderBy('createdAt', 'desc'));
+        const groupSessionsSnapshot = await getDocs(groupSessionsQuery);
+        const groupSessions = groupSessionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          type: 'group',
+          ...doc.data()
+        }));
+
+        setSessions([...regularSessions, ...groupSessions]);
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+      }
+    };
+
+    if (user) {
+      fetchAllSessions();
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -39,28 +93,6 @@ const Home = () => {
     }
   };
 
-  const handleMajorSubmit = async (e) => {
-    e.preventDefault();
-    if (!major.trim()) return;
-
-    try {
-      await updateMajor(major.trim());
-      setMajor('');
-    } catch (error) {
-      console.error('Failed to update major:', error);
-    }
-  };
-
-  const handleSkipMajor = async () => {
-    try {
-      await updateMajor('non denominated');
-    } catch (error) {
-      console.error('Failed to set default major:', error);
-    }
-  };
-
-  const showMajorInput = user && (!user.major || user.major === 'non denominated');
-
   if (loading) {
     return (
       <div className="loading">
@@ -73,128 +105,95 @@ const Home = () => {
   return (
     <div className="home-page">
       <section className="hero-section">
-        <h1>{homeData.title}</h1>
-        <p style={{ color: 'white' }}>{homeData.description}</p>
-        {!user ? (
-          <button onClick={handleGoogleSignIn} className="btn btn-primary google-signin">
-            Login to Get Started
-          </button>
-        ) : showMajorInput ? (
-          <div className="major-section">
-            <form onSubmit={handleMajorSubmit} className="major-form-hero">
-              <select
-                value={major}
-                onChange={(e) => setMajor(e.target.value)}
-                className="major-input-hero"
-              >
-                <option value="">Select your major</option>
-                {allMajors.map((majorOption) => (
-                  <option key={majorOption} value={majorOption}>
-                    {majorOption}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="btn btn-primary">
-                Set Major
+        <div className="hero-content">
+          <div className="hero-text">
+            <h1>{homeData.title}</h1>
+            <p>{homeData.description}</p>
+            {!user && (
+              <button onClick={handleGoogleSignIn} className="google-signin">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" />
+                Continue with Google
               </button>
-            </form>
-            {!user.major && (
-              <>
-                <button onClick={handleSkipMajor} className="btn btn-secondary skip-major">
-                  Skip for Now
-                </button>
-                <p className="major-note">You can continue using the website without setting your major</p>
-              </>
             )}
           </div>
-        ) : null}
-      </section>
-
-      <section className="section">
-        <h2 className="text-center">Our Features</h2>
-        <div className="features-section">
-          <div className="feature-card">
-            <h3>Easy Navigation</h3>
-            <p>Navigate through different categories with our intuitive interface.</p>
-            <Link to="/category1" className="btn btn-primary">Learn More</Link>
-          </div>
-          <div className="feature-card">
-            <h3>Comprehensive Solutions</h3>
-            <p>Find solutions for all your needs in one place.</p>
-            <Link to="/category2" className="btn btn-primary">Learn More</Link>
-          </div>
-          <div className="feature-card">
-            <h3>AI Integration</h3>
-            <p>Leverage the power of AI to enhance your experience.</p>
-            <Link to="/ai" className="btn btn-primary">Learn More</Link>
+          <div className="hero-image">
+            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80" alt="Students studying" />
           </div>
         </div>
       </section>
 
-      <style jsx>{`
-        .major-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-          max-width: 500px;
-          margin: 0 auto;
-        }
+      <div className="home-content-grid">
+        {user && (
+          <section className="home-upcoming-sessions">
+            <h2>Upcoming sessions</h2>
+            <div className="home-session-cards">
+              {sessions
+                .filter(session => {
+                  const sessionDate = new Date(session.dateTime);
+                  const now = new Date();
+                  return session.participants.some(p => p.uid === user.uid) && sessionDate > now;
+                })
+                .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
+                .slice(0, 2)
+                .map(session => (
+                  <div key={session.id} className="home-session-card">
+                    <div className="home-session-info">
+                      <div>
+                        <h3>{session.course || 'Study session'} on {new Date(session.dateTime).toLocaleString()}</h3>
+                        <p className="home-location">
+                          <i className="fas fa-map-marker-alt"></i> {session.location}
+                        </p>
+                      </div>
+                      <button
+                        className="cancel-session"
+                        onClick={() => {
+                          const isOwner = user.uid === session.userId;
+                          const message = isOwner ?
+                            'Are you sure you want to disband this session? This will remove all participants.' :
+                            'Are you sure you want to leave this session?';
+                          
+                          if (window.confirm(message)) {
+                            if (isOwner) {
+                              handleDisbandSession(session.id);
+                            } else {
+                              handleLeaveSession(session.id);
+                            }
+                          }
+                        }}
+                      >
+                        Cancel session
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              {sessions.filter(session => {
+                const sessionDate = new Date(session.dateTime);
+                const now = new Date();
+                return session.participants.some(p => p.uid === user.uid) && sessionDate > now;
+              }).length === 0 && (
+                <p>No future sessions scheduled</p>
+              )}
+            </div>
+            <Link to="/calendar" className="go-to-calendar">Go to Calendar</Link>
+          </section>
+        )}
 
-        .major-form-hero {
-          display: flex;
-          gap: 1rem;
-          width: 100%;
-        }
-
-        .major-input-hero {
-          flex: 1;
-          padding: 0.8rem 1rem;
-          border: none;
-          border-radius: 4px;
-          font-size: 1rem;
-          background: white;
-          color: #333;
-        }
-
-        .major-input-hero:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.5);
-        }
-
-        .skip-major {
-          width: 100%;
-          background: transparent;
-          border: 2px solid #4285f4;
-          color: #4285f4;
-        }
-
-        .skip-major:hover {
-          background: rgba(66, 133, 244, 0.1);
-        }
-
-        .major-note {
-          color: white;
-          font-size: 0.9rem;
-          text-align: center;
-          margin-top: 0.5rem;
-        }
-
-        .google-signin {
-          padding: 0.8rem 2rem;
-          font-size: 1.1rem;
-          background: white;
-          color: #4285f4;
-          border: none;
-          transition: all 0.3s ease;
-        }
-
-        .google-signin:hover {
-          background: #4285f4;
-          color: var(--primary-red);
-          box-shadow: 0 0 15px rgba(66, 133, 244, 0.5);
-        }
-      `}</style>
+        <section className="home-features">
+          <h2>Features</h2>
+          <div className="home-feature-cards">
+            <div className="home-feature-card">
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3" alt="Study buddy" />
+              <h3>Find Your Perfect Study Buddy</h3>
+              <Link to="/studywithbuddy" className="home-feature-btn study">Get Started</Link>
+            </div>
+            <div className="home-feature-card">
+              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAABuFJREFUeJzt3V2IXGcZx/Hfc2Z2Z3c2u9lNYpqkSWxTm6Y2VWyxxYsW8QO0iqAXghfeiQoKXnkjKHjhhYKgqHgjKIJY8EJEEMUPVGqRWluTYJM0/UjzZZPd7O7s7MzOzDkPXkRr2t2Zd2fOec97/r8fWEh2z3nPf+Z5z5yZOWcGRERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER" alt="AI" />
+              <h3>Get AI Powered Recommendations</h3>
+              <Link to="/faq#ai-demo" className="home-feature-btn ai">Get Started</Link>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
