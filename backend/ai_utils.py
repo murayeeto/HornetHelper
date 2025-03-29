@@ -8,11 +8,15 @@ Requires API keys to be set in .env file:
 
 import os
 import openai
+import pandas as pd
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Path to the textbooks dataset
+TEXTBOOKS_CSV_PATH = './backend/csv/textbooks.csv'
 
 # Initialize OpenAI with API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -120,4 +124,63 @@ def get_video_recommendation(major):
         print(f"Error getting video recommendation for course '{major}': {str(e)}")
         if not YOUTUBE_API_KEY:
             print("YouTube API key is missing!")
+        return None
+
+def get_textbook_recommendation(major):
+    """
+    Search for textbook recommendations related to a specific course or major
+    
+    Args:
+        major (str): Course name or major to search for
+        
+    Returns:
+        list: List of dictionaries containing textbook information:
+            - title: Textbook title
+            - author: Author name
+            - isbn: ISBN number
+            - subject: Subject area
+            - description: Course description if available
+            
+    Note:
+        - Returns up to 3 most relevant textbooks
+        - Matches based on course name and subject area
+        - Uses a local CSV file containing textbook information
+    """
+    try:
+        # Read the dataset from local CSV file
+        df = pd.read_csv(TEXTBOOKS_CSV_PATH)
+        
+        # Convert search terms and book titles to lowercase for case-insensitive matching
+        search_terms = major.lower().split()
+        
+        # Convert search terms and book titles to lowercase for case-insensitive matching
+        search_terms = major.lower().split()
+        
+        # Create a relevance score based on how many search terms match the book title
+        df['relevance'] = df.apply(
+            lambda row: sum(
+                term in str(row['title']).lower()
+                for term in search_terms
+            ),
+            axis=1
+        )
+        
+        # Get top 3 most relevant textbooks
+        relevant_books = df[df['relevance'] > 0].sort_values('relevance', ascending=False).head(3)
+        
+        if relevant_books.empty:
+            return None
+            
+        # Format results
+        textbooks = []
+        for _, book in relevant_books.iterrows():
+            textbooks.append({
+                "title": book['title'],
+                "edition": book['edition'] if 'edition' in book else "Edition not available"
+            })
+            
+        return textbooks
+        
+    except Exception as e:
+        print(f"Error getting textbook recommendation for course '{major}': {str(e)}")
         return None

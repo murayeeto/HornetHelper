@@ -7,7 +7,7 @@ Uses OpenAI for natural language processing and YouTube API for video search.
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from functools import wraps
-from ai_utils import get_ai_response, get_video_recommendation
+from ai_utils import get_ai_response, get_video_recommendation, get_textbook_recommendation
 
 app = Flask(__name__)
 
@@ -88,6 +88,36 @@ def recommend_video():
         if recommendation:
             return jsonify(recommendation)
         return jsonify({"error": "No video recommendations found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/recommend-textbook', methods=['POST'])
+def recommend_textbook():
+    """
+    Textbook Recommendation Endpoint
+    Returns textbook recommendations based on the provided course/major.
+    
+    Request body:
+    {
+        "major": "Course or major name"
+    }
+    
+    Returns:
+    - 200: JSON array of textbook recommendations
+    - 400: If major is missing
+    - 404: If no textbooks found
+    - 500: For server errors
+    """
+    try:
+        data = request.get_json()
+        if not data or 'major' not in data:
+            return jsonify({"error": "Major is required"}), 400
+        major = data['major']
+        recommendation = get_textbook_recommendation(major)
+        
+        if recommendation:
+            return jsonify(recommendation)
+        return jsonify({"error": "No textbook recommendations found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

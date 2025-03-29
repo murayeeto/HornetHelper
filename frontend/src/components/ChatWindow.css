@@ -91,7 +91,7 @@
 }
 
 .chat-message.user .message-sender {
-    color: #6366f1;
+    color: white;
     text-align: right;
 }
 
@@ -207,4 +207,112 @@
     background: #9ca3af;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Recommendation Modal Styles */
+.recommendation-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+    animation: fadeIn 0.3s ease;
+}
+
+.recommendation-modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.recommendation-modal-content h3 {
+    margin: 0 0 20px 0;
+    color: #1f2937;
+    font-size: 18px;
+    text-align: center;
+}
+
+.recommendation-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.recommend-button {
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    text-align: left;
+}
+
+.recommend-button.video {
+    background: linear-gradient(135deg, #34d399, #059669);
+}
+
+.recommend-button.textbook {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.recommend-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.recommend-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.close-modal-button {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-modal-button:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

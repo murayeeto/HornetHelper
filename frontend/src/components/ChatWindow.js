@@ -21,6 +21,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
     const [showAiButtons, setShowAiButtons] = useState(false); // AI feature visibility toggle
     const [charCount, setCharCount] = useState(0); // Message length counter
     const [loading, setLoading] = useState(false); // Loading state for AI operations
+    const [showRecommendModal, setShowRecommendModal] = useState(false); // Modal for recommendation type
     const messagesContainerRef = useRef(null); // Reference for auto-scrolling
     const MAX_CHARS = 400; // Maximum characters per message
     
@@ -106,47 +107,47 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
     };
 
     /**
-     * Handles video recommendations for the current course
-     * Fetches course-specific educational videos and displays them as clickable links
+     * Gets the session data for the current chat
+     * @returns {Object} Session data and messages reference
      */
-    const handleAiRecommend = async () => {
+    const getSessionData = async () => {
+        if (!sessionId) {
+            throw new Error('No session ID provided');
+        }
+
+        // Smart session detection for both group and duo sessions
+        let collectionPath = 'groupSessions';
+        let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+        let sessionDoc = await getDoc(sessionDocRef);
+
+        if (!sessionDoc.exists()) {
+            collectionPath = 'sessions';
+            sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            sessionDoc = await getDoc(sessionDocRef);
+        }
+
+        if (!sessionDoc.exists()) {
+            throw new Error(`Session document not found: ${sessionId} in either collection`);
+        }
+
+        const sessionData = sessionDoc.data();
+        if (!sessionData?.course) {
+            throw new Error(`Session found but no course information available. Session ID: ${sessionId}`);
+        }
+
+        return {
+            sessionData,
+            messagesRef: collection(sessionDocRef, 'messages')
+        };
+    };
+
+    /**
+     * Handles video recommendations for the current course
+     */
+    const handleVideoRecommend = async () => {
         setLoading(true);
         try {
-            if (!sessionId) {
-                throw new Error('No session ID provided');
-            }
-
-            // Smart session detection for both group and duo sessions
-            let collectionPath = 'groupSessions';
-            let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
-            let sessionDoc = await getDoc(sessionDocRef);
-
-            if (!sessionDoc.exists()) {
-                collectionPath = 'sessions';
-                sessionDocRef = doc(firebase.db, collectionPath, sessionId);
-                sessionDoc = await getDoc(sessionDocRef);
-            }
-
-            console.log("Getting session data for:", {
-                sessionId,
-                collectionPath,
-                exists: sessionDoc.exists()
-            });
-
-            if (!sessionDoc.exists()) {
-                throw new Error(`Session document not found: ${sessionId} in either collection`);
-            }
-
-            const sessionRef = sessionDocRef;
-            const messagesRef = collection(sessionRef, 'messages');
-
-            const sessionData = sessionDoc.data();
-            console.log("Session data:", sessionData);
-            console.log("Course from session:", sessionData?.course);
-
-            if (!sessionData?.course) {
-                throw new Error(`Session found but no course information available. Session ID: ${sessionId}`);
-            }
+            const { sessionData, messagesRef } = await getSessionData();
 
             // Fetch video recommendations from AI service
             const response = await axios.post('http://localhost:8888/api/recommend-video', {
@@ -179,28 +180,85 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
             
             setShowAiButtons(false);
         } catch (error) {
-            console.error("Error getting recommendations:", error);
-            // Add error message to chat
-            const isGroupSession = window.location.pathname.includes('group');
-            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
-            const messagesRef = collection(doc(firebase.db, collectionPath, sessionId), 'messages');
+            await handleRecommendationError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /**
+     * Handles textbook recommendations for the current course
+     */
+    const handleTextbookRecommend = async () => {
+        setLoading(true);
+        try {
+            const { sessionData, messagesRef } = await getSessionData();
+
+            // Fetch textbook recommendations from AI service
+            const response = await axios.post('http://localhost:8888/api/recommend-textbook', {
+                major: sessionData.course
+            });
+
+            // Format textbooks with organized display
+            const textbooks = response.data;
+            const recommendationText = textbooks.map(book => (
+                `<div style="margin-bottom: 20px;">
+                    <strong>📚 ${book.title}</strong><br/>
+                    <span>📖 Edition: ${book.edition}</span>
+                </div>`
+            )).join('\n');
+            
+            // Add formatted recommendations to chat
             await addDoc(messagesRef, {
-                text: error.message.includes('No session ID provided')
-                    ? "Error: Chat session not properly initialized. Please try refreshing the page."
-                    : error.message.includes('Session document not found')
-                    ? "Error: Could not find the chat session. Please try refreshing the page."
-                    : error.message.includes('Session found but no course information')
-                    ? "Error: This chat session doesn't have a course assigned to it. Please make sure you're in a course-specific chat."
-                    : "Sorry, I couldn't get video recommendations at the moment. Please try again later.",
+                text: `<div>
+                    <h3>Here are some recommended textbooks for ${sessionData.course}:</h3>
+                    ${recommendationText}
+                </div>`,
+                isHtml: true,
                 userId: "ai",
                 displayName: "AI Assistant",
                 timestamp: serverTimestamp(),
                 isAiMessage: true,
                 visibleToHornet: true
             });
+            
+            setShowAiButtons(false);
+        } catch (error) {
+            await handleRecommendationError(error);
         } finally {
             setLoading(false);
         }
+    };
+
+    /**
+     * Handles errors from recommendation requests
+     */
+    const handleRecommendationError = async (error) => {
+        console.error("Error getting recommendations:", error);
+        const isGroupSession = window.location.pathname.includes('group');
+        const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
+        const messagesRef = collection(doc(firebase.db, collectionPath, sessionId), 'messages');
+        await addDoc(messagesRef, {
+            text: error.message.includes('No session ID provided')
+                ? "Error: Chat session not properly initialized. Please try refreshing the page."
+                : error.message.includes('Session document not found')
+                ? "Error: Could not find the chat session. Please try refreshing the page."
+                : error.message.includes('Session found but no course information')
+                ? "Error: This chat session doesn't have a course assigned to it. Please make sure you're in a course-specific chat."
+                : "Sorry, I couldn't get recommendations at the moment. Please try again later.",
+            userId: "ai",
+            displayName: "AI Assistant",
+            timestamp: serverTimestamp(),
+            isAiMessage: true,
+            visibleToHornet: true
+        });
+    };
+
+    /**
+     * Opens the recommendation type selection modal
+     */
+    const handleAiRecommend = () => {
+        setShowRecommendModal(true);
     };
 
     /**
@@ -392,6 +450,43 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                     </button>
                 </form>
             </div>
+
+            {/* Recommendation Type Modal */}
+            {showRecommendModal && (
+                <div className="recommendation-modal">
+                    <div className="recommendation-modal-content">
+                        <h3>Choose Recommendation Type</h3>
+                        <div className="recommendation-buttons">
+                            <button
+                                onClick={() => {
+                                    setShowRecommendModal(false);
+                                    handleVideoRecommend();
+                                }}
+                                className="recommend-button video"
+                                disabled={loading}
+                            >
+                                📺 Educational Videos
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowRecommendModal(false);
+                                    handleTextbookRecommend();
+                                }}
+                                className="recommend-button textbook"
+                                disabled={loading}
+                            >
+                                📚 Textbooks
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setShowRecommendModal(false)}
+                            className="close-modal-button"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
