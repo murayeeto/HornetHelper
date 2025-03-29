@@ -23,7 +23,6 @@ const Navbar = () => {
         setCategories([
           { id: 'studywithbuddy', name: 'Studdy With Buddy' },
           { id: 'category2', name: 'Category 2' },
-          { id: 'category3', name: 'Category 3' },
           { id: 'calendar', name: 'Calendar' },
           { id: 'ai', name: 'AI Solutions' }
         ]);
@@ -80,22 +79,16 @@ const Navbar = () => {
             <li className="nav-item auth-item">
               <div className="user-info">
                 <NavLink to="/account" className="user-profile">
-                  <img 
-                    src={user.photoURL || DEFAULT_PROFILE_PIC} 
-                    alt="Profile" 
+                  <img
+                    src={user.photoURL || DEFAULT_PROFILE_PIC}
+                    alt="Profile"
                     className="profile-picture"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = DEFAULT_PROFILE_PIC;
                     }}
                   />
-                  <span className="user-name">{user.displayName}</span>
                 </NavLink>
-                {user.major && (
-                  <span className={`user-major ${user.major === 'non denominated' ? 'non-denominated' : ''}`}>
-                    {user.major === 'non denominated' ? 'Major not set' : user.major}
-                  </span>
-                )}
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>
