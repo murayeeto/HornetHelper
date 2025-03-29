@@ -12,28 +12,19 @@ const faqData = {
   title: "Frequently Asked Questions",
   categories: [
     {
-      title: "AI Features",
+      title: "General Questions.",
       items: [
         {
-          question: "What AI features are available?",
-          answer: "We offer two powerful AI features: 1) An intelligent tutoring system powered by a neural chat model that can help with your studies, and 2) A smart YouTube video recommendation system that suggests educational content based on your major."
+          question: "What is Hornet Helper?",
+          answer: "Hornet Helper is an AI-powered platform that helps students form study groups, automate scheduling, and discover personalized learning resources. Unlike manual tools, Hornet Helper connects you with peers, adds study sessions to your calendar automatically, and uses machine learning to recommend the best videos and textbooks"
         },
         {
-          question: "How accurate are the AI recommendations?",
-          answer: "Our AI system uses state-of-the-art models including the IBL Tutoring Neural Chat model for personalized assistance and integrates with YouTube's API to find highly relevant educational content for your field of study."
-        }
-      ]
-    },
-    {
-      title: "General Questions",
-      items: [
-        {
-          question: "What is this service?",
-          answer: "Our platform helps students find study groups and provides AI-powered resource recommendations for premium users."
+          question: "How is this different from Discord or Facebook Groups?",
+          answer: "While Discord and Facebook are great for casual chats, Hornet Helper is designed specifically for focused learning with no manual scheduling: meetings auto-sync to your calendar when you join a group and AI-curated resources: Get recommendations tailored to your subject (e.g., STEM, languages) instead of searching endlessly."
         },
         {
-          question: "Is there a free version?",
-          answer: "Yes, you can join and create study groups for free. AI resource recommendations require a premium subscription."
+          question: "Is Hornet Helper free?",
+          answer: "Hornet Helper offers a free plan with limited features, as well as many useful extra features for our Hornet Pro users."
         }
       ]
     },
@@ -46,7 +37,7 @@ const faqData = {
         },
         {
           question: "Can I create my own study group?",
-          answer: "Absolutely! Free users can create up to 3 study groups. Premium users can create unlimited groups."
+          answer: "Absolutely! Both Free and Pro plan members can create groups to find new Study Buddies!"
         },
         {
           question: "What sizes do study groups come in?",
@@ -59,15 +50,15 @@ const faqData = {
       items: [
         {
           question: "What does premium offer?",
-          answer: "Premium includes AI-powered resource recommendations with unlimited group creation."
+          answer: "Pro users get access to tailored resource recommendation for textbooks and videos."
         },
         {
           question: "How much does premium cost?",
-          answer: "We offer monthly ($9.99) and annual ($89.99) subscription options."
+          answer: "We offer monthly ($4.99) and annual ($49.99) subscription options."
         },
         {
           question: "How does the AI resource recommendation work?",
-          answer: "Our AI analyzes your major, interests, and study patterns to provide personalized learning resources and study materials."
+          answer: "Great question!"
         }
       ]
     }
