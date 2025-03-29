@@ -122,18 +122,6 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="section text-center">
-        <h2>Ready to Get Started?</h2>
-        <p>Explore our categories and find what you need.</p>
-        <div className="btn-group">
-          <Link to="/category1" className="btn btn-primary">Category 1</Link>
-          <Link to="/category2" className="btn btn-primary">Category 2</Link>
-          <Link to="/category3" className="btn btn-primary">Category 3</Link>
-          <Link to="/calendar" className="btn btn-primary">Calendar</Link>
-          <Link to="/ai" className="btn btn-secondary">AI Solutions</Link>
-        </div>
-      </section>
-
       <style jsx>{`
         .major-section {
           display: flex;
