@@ -58,7 +58,7 @@ const faqData = {
         },
         {
           question: "How does the AI resource recommendation work?",
-          answer: "Great question!"
+          answer: "The AI uses cutting edge technology and leverages the study sessions main topic to recommend relevent videos to the overarching session."
         }
       ]
     }
