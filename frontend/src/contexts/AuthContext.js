@@ -183,6 +183,29 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function downgradeFromHornet() {
+    try {
+      if (!user) throw new Error("No authenticated user");
+      
+      const userRef = doc(firebase.db, 'users', user.uid);
+      await setDoc(userRef, {
+        isHornet: false,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      
+      setUser(prevUser => ({
+        ...prevUser,
+        isHornet: false
+      }));
+      
+      return true;
+    } catch (error) {
+      console.error("Error downgrading from Hornet:", error);
+      setError(error.message);
+      throw error;
+    }
+  }
+
   async function upgradeToHornet() {
     try {
       if (!user) throw new Error("No authenticated user");
@@ -293,6 +316,7 @@ export function AuthProvider({ children }) {
     updateDisplayName,
     updateProfilePicture,
     upgradeToHornet,
+    downgradeFromHornet,
     error,
     setError
   };
