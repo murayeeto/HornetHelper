@@ -1,9 +1,25 @@
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import './Pricing.css';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState('monthly');
+  const [message, setMessage] = useState('');
+  const { upgradeToHornet } = useAuth();
   
+  const handleUpgrade = async () => {
+    if (window.confirm('Would you like to upgrade to Pro status?')) {
+      try {
+        await upgradeToHornet();
+        setMessage('Successfully upgraded to Pro!');
+        setTimeout(() => setMessage(''), 3000);
+      } catch (error) {
+        setMessage(error.message || 'Failed to upgrade. Please try again.');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    }
+  };
+
   const toggleBillingCycle = () => {
     setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly');
   };
@@ -86,15 +102,21 @@ const Pricing = () => {
                 <li key={i}>{feature}</li>
               ))}
             </ul>
-            <button 
+            <button
               className={`cta-button ${plan.disabled ? 'disabled' : ''}`}
               disabled={plan.disabled}
+              onClick={plan.name === 'Pro' ? handleUpgrade : undefined}
             >
               {plan.cta}
             </button>
           </div>
         ))}
       </div>
+      {message && (
+        <div className={`message ${message.includes('Failed') ? 'error' : 'success'}`}>
+          {message}
+        </div>
+      )}
     </div>
   );
 };
