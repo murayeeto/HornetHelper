@@ -1,16 +1,13 @@
 /* Calendar Container */
-/* Remove fixed positioning from calendar container */
 .calendar-exact-container {
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Changed from center to flex-start */
+  align-items: flex-start;
   overflow: auto;
   background: #f5f5f5;
   padding: 20px;
-  min-height: calc(100vh - 120px); /* Adjust based on header/footer height */
+  min-height: calc(100vh - 120px);
 }
-
-/* Keep all other calendar styles the same */
 
 .calendar-exact {
   background: white;
@@ -82,11 +79,14 @@
 /* Day Cell Styles */
 .day-cell-exact {
   border: 1px solid #e0e0e0;
-  padding: 4px;
+  padding: 3px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .day-cell-exact:hover {
@@ -105,21 +105,53 @@
 }
 
 .day-cell-exact[data-weekend="true"] {
-  background: #f9f9f9;
+  background-color: #f9f9f9;
 }
 
 .day-number-exact {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  margin-bottom: 2px;
+  align-self: flex-start;
 }
 
 .today-indicator {
   position: absolute;
-  bottom: 4px;
-  left: 4px;
-  font-size: 0.7rem;
+  top: 2px;
+  right: 2px;
+  font-size: 0.6rem;
   color: #ff6f00;
   font-weight: bold;
+}
+
+/* Day Events Preview */
+.day-events-preview {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 40px;
+  overflow: hidden;
+}
+
+.event-preview {
+  font-size: 0.6rem;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
+  max-width: 100%;
+  background-color: var(--event-color);
+  border-left: 3px solid color-mix(in srgb, var(--event-color) 80%, black);
+}
+
+.event-preview::before {
+  content: attr(data-time);
+  font-weight: bold;
+  margin-right: 4px;
+  opacity: 0.9;
 }
 
 /* Day View Styles */
@@ -167,7 +199,7 @@
   position: relative;
   border-left: 2px solid #4a6fa5;
   margin-left: 80px;
-  height: calc(24 * 60px); /* 24 hours * 60px each */
+  height: calc(24 * 60px);
   min-height: 100%;
 }
 
@@ -207,21 +239,22 @@
 .time-event {
   position: absolute;
   left: 10px;
-  right: 10px;
+  right: 30px; /* Added space for delete button */
   padding: 6px 10px;
   border-radius: 4px;
   color: white;
   font-size: 0.85rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   pointer-events: auto;
-  max-width: calc(100% - 20px);
+  max-width: calc(100% - 40px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   z-index: 2;
-  /* Remove transform: translateY(-50%) */
   height: auto;
   margin-top: 0;
+  display: flex;
+  align-items: center;
 }
 
 .time-event:hover {
@@ -230,11 +263,46 @@
 }
 
 .event-time {
-  display: block;
-  font-size: 0.75rem;
-  margin-bottom: 2px;
   font-weight: bold;
+  margin-right: 5px;
   opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.event-title {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Delete Event Button */
+.delete-event-btn {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.2);
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-event:hover .delete-event-btn {
+  opacity: 1;
+}
+
+.delete-event-btn:hover {
+  background: rgba(0,0,0,0.4);
 }
 
 /* Event Form Styles */
@@ -346,6 +414,17 @@
   .time-events-container {
     margin-left: 60px;
   }
+
+  .time-event {
+    right: 25px;
+    max-width: calc(100% - 35px);
+  }
+
+  .delete-event-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+  }
   
   .form-row {
     flex-direction: column;
@@ -360,72 +439,4 @@
   .time-input-group {
     width: 100%;
   }
-}
-
-/* Add these styles to your Calendar.css */
-
-/* Compact Event Previews */
-.day-events-preview {
-  margin-top: 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 40px;
-  overflow: hidden;
-}
-
-.event-preview {
-  font-size: 0.6rem;
-  color: white;
-  padding: 2px 4px;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  line-height: 1.2;
-  max-width: 100%;
-  background-color: var(--event-color);
-  border-left: 3px solid color-mix(in srgb, var(--event-color) 80%, black);
-}
-
-.event-preview::before {
-  content: attr(data-time);
-  font-weight: bold;
-  margin-right: 4px;
-  opacity: 0.9;
-}
-
-/* Adjust day cell layout */
-.day-cell-exact {
-  padding: 3px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.day-number-exact {
-  font-size: 0.8rem;
-  margin-bottom: 2px;
-  align-self: flex-start;
-}
-
-/* Today indicator adjustments */
-.today-indicator {
-  font-size: 0.6rem;
-  bottom: auto;
-  top: 2px;
-  right: 2px;
-  left: auto;
-}
-
-/* Weekend cell adjustments */
-.day-cell-exact[data-weekend="true"] {
-  background-color: #f5f5f5;
-}
-
-/* Hover state for more visibility */
-.day-cell-exact:hover .event-preview {
-  white-space: nowrap;
-  overflow: visible;
-  position: relative;
-  z-index: 2;
 }
