@@ -5,11 +5,13 @@ import './Account.css';
 const DEFAULT_PROFILE_PIC = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
 
 const Account = () => {
-  const { user, updateMajor, updateDisplayName, updateProfilePicture, upgradeToHornet, downgradeFromHornet } = useAuth();
+  const { user, updateMajor, updateDisplayName, updateProfilePicture, updateGender, upgradeToHornet, downgradeFromHornet } = useAuth();
   const [major, setMajor] = useState(user?.major || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [gender, setGender] = useState(user?.gender || '');
   const [isEditingMajor, setIsEditingMajor] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingGender, setIsEditingGender] = useState(false);
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -78,11 +80,27 @@ const Account = () => {
     }
   };
 
+  const handleGenderSubmit = async (e) => {
+    e.preventDefault();
+    if (!gender) return;
+
+    try {
+      await updateGender(gender);
+      setIsEditingGender(false);
+      setMessage('Gender updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Failed to update gender:', error);
+      setMessage(error.message || 'Failed to update gender. Please try again.');
+    }
+  };
+
   // Update local state when user data changes
   useEffect(() => {
     if (user) {
       setMajor(user.major || '');
       setDisplayName(user.displayName || '');
+      setGender(user.gender || '');
     }
   }, [user]);
 
@@ -192,8 +210,8 @@ const Account = () => {
                     <button type="submit" className="save-btn">
                       Save
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setIsEditingMajor(false);
                         setMajor(user.major || '');
@@ -208,6 +226,65 @@ const Account = () => {
                 <div className="info-display">
                   <p>{user.major === 'non denominated' ? 'Not set' : user.major}</p>
                   <button onClick={() => setIsEditingMajor(true)} className="edit-btn">
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="info-group">
+              <label>Gender</label>
+              {isEditingGender ? (
+                <form onSubmit={handleGenderSubmit} className="edit-form">
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        value="male"
+                        checked={gender === 'male'}
+                        onChange={(e) => setGender(e.target.value)}
+                      />
+                      Male
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        value="female"
+                        checked={gender === 'female'}
+                        onChange={(e) => setGender(e.target.value)}
+                      />
+                      Female
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        value="other"
+                        checked={gender === 'other'}
+                        onChange={(e) => setGender(e.target.value)}
+                      />
+                      Other
+                    </label>
+                  </div>
+                  <div className="button-group">
+                    <button type="submit" className="save-btn">
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingGender(false);
+                        setGender(user.gender || '');
+                      }}
+                      className="cancel-btn"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="info-display">
+                  <p>{user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : 'Not set'}</p>
+                  <button onClick={() => setIsEditingGender(true)} className="edit-btn">
                     Edit
                   </button>
                 </div>

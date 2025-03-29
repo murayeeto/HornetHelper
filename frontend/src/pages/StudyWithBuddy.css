@@ -155,6 +155,53 @@
     gap: 10px;
 }
 
+.gender-options {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.gender-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #333;
+}
+
+.gender-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #00A7E3;
+}
+
+.gender-option:hover {
+    color: #00A7E3;
+}
+
+.all-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.session-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.session-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
 .session-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -176,6 +223,49 @@
     margin-bottom: 10px;
 }
 
+.participants-list {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.participants-list h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.participant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.participant-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.participant-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 5px;
+}
+
+.participant-item span {
+    font-size: 0.8rem;
+    color: #555;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .join-btn {
     background-color: #00A7E3;
     color: white;
@@ -186,6 +276,21 @@
     cursor: pointer;
     font-weight: bold;
     margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.join-btn:hover:not(:disabled) {
+    background-color: #0089c4;
+}
+
+.join-btn.joined {
+    background-color: #28a745;
+    cursor: default;
+}
+
+.join-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 @media screen and (max-width: 1200px){   
