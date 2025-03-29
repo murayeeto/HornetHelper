@@ -83,6 +83,7 @@ const Home = () => {
     };
 
     fetchHomeData();
+    window.scrollTo(0,0);
   }, []);
 
   const handleGoogleSignIn = async () => {

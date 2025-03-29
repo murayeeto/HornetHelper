@@ -25,6 +25,12 @@ import { useSessionHandlers, addToCalendar } from '../utils/sessionHandlers';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function HomeScreen({ setScreen }) {
+    
+    useEffect(() => {
+        window.scrollTo(0,0);
+    }
+    , []);
+
     return (
         <section className="home-container">
             <h1 className="title">Welcome To StudyBuddy!</h1>
@@ -90,6 +96,11 @@ function DuoSessions({ setScreen }) {
     const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'sessions', fetchSessions);
     // Get all majors from all departments
     const allMajors = Object.values(departmentsAndMajors).flat();
+
+    useEffect(()=>{
+        window.scrollTo(0,0);
+    }, [])
+
 
     // Update sessions when user profile changes
     useEffect(() => {
@@ -642,6 +653,7 @@ function GroupSessions({ setScreen }) {
 
     // Initial fetch
     useEffect(() => {
+        window.scrollTo(0,0);
         fetchSessions();
     }, []);
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './Pricing.css';
+import { useEffect } from 'react';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState('monthly');
@@ -23,6 +24,11 @@ const Pricing = () => {
   const toggleBillingCycle = () => {
     setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly');
   };
+
+  useEffect(() => {
+      window.scrollTo(0,0);
+  }
+  , []);
 
   const plans = [
     {
