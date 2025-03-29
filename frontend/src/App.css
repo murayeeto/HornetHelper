@@ -181,7 +181,7 @@
 
 /* Footer Styles */
 .app-footer {
-  background-color: rgba(210, 43, 43, 0.75);
+  background-color: rgb(176, 26, 26);
   padding: 20px 0;
   margin-top: auto;
   border-top: 1px solid #e9ecef;
@@ -205,10 +205,11 @@
 }
 
 .footer-links a {
-  color: var(--primary-blue);
-  font-weight: bold;
+  color: rgb(55, 106, 216);
+  font-weight: 1000;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
+  text-shadow: 0px 4px 4px blue;
 }
 
 .footer-links a:hover {
