@@ -24,7 +24,6 @@ const Navbar = () => {
         setCategories([
           { id: 'studywithbuddy', name: 'Studdy With Buddy' },
           { id: 'category2', name: 'Category 2' },
-          { id: 'category3', name: 'Category 3' },
           { id: 'calendar', name: 'Calendar' },
           { id: 'ai', name: 'AI Solutions' }
         ]);
