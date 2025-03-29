@@ -6,11 +6,13 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
-  serverTimestamp 
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  serverTimestamp
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -50,6 +52,7 @@ export function AuthProvider({ children }) {
           displayName: result.user.displayName,
           photoURL: photoURL,
           major: '',
+          gender: '',
           isHornet: false,
           createdAt: serverTimestamp()
         });
@@ -75,15 +78,44 @@ export function AuthProvider({ children }) {
       if (!user) throw new Error("No authenticated user");
       if (newDisplayName.length > 14) throw new Error("Display name must be 14 characters or less");
       
-      await updateProfile(user, {
+      await updateProfile(firebase.auth.currentUser, {
         displayName: newDisplayName
       });
 
       const userRef = doc(firebase.db, 'users', user.uid);
+      // Update user document
       await setDoc(userRef, {
         displayName: newDisplayName,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // Update sessions where user is a participant
+      const sessionsRef = collection(firebase.db, 'sessions');
+      const sessionsSnapshot = await getDocs(sessionsRef);
+      
+      const updatePromises = sessionsSnapshot.docs.map(async (doc) => {
+        const sessionData = doc.data();
+        const participants = sessionData.participants || [];
+        const userIndex = participants.findIndex(p => p.uid === user.uid);
+        
+        if (userIndex !== -1) {
+          participants[userIndex].displayName = newDisplayName;
+          await setDoc(doc.ref, {
+            participants,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+
+        // Also update if user is the session creator
+        if (sessionData.userId === user.uid) {
+          await setDoc(doc.ref, {
+            displayName: newDisplayName,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      });
+
+      await Promise.all(updatePromises);
 
       setUser(prevUser => ({
         ...prevUser,
@@ -155,6 +187,34 @@ export function AuthProvider({ children }) {
         photoURL: downloadURL,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // Update sessions where user is a participant or creator
+      const sessionsRef = collection(firebase.db, 'sessions');
+      const sessionsSnapshot = await getDocs(sessionsRef);
+      
+      const updatePromises = sessionsSnapshot.docs.map(async (doc) => {
+        const sessionData = doc.data();
+        const participants = sessionData.participants || [];
+        const userIndex = participants.findIndex(p => p.uid === user.uid);
+        
+        if (userIndex !== -1) {
+          participants[userIndex].photoURL = downloadURL;
+          await setDoc(doc.ref, {
+            participants,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+
+        // Also update if user is the session creator
+        if (sessionData.userId === user.uid) {
+          await setDoc(doc.ref, {
+            photoURL: downloadURL,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      });
+
+      await Promise.all(updatePromises);
 
       // Update auth profile
       await updateProfile(firebase.auth.currentUser, {
@@ -252,6 +312,61 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function updateGender(newGender) {
+    try {
+      if (!user) throw new Error("No authenticated user");
+      if (!['male', 'female', 'other'].includes(newGender)) {
+        throw new Error("Invalid gender value");
+      }
+      
+      const userRef = doc(firebase.db, 'users', user.uid);
+      // Update user document
+      await setDoc(userRef, {
+        gender: newGender,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // Update sessions where user is a participant or creator
+      const sessionsRef = collection(firebase.db, 'sessions');
+      const sessionsSnapshot = await getDocs(sessionsRef);
+      
+      const updatePromises = sessionsSnapshot.docs.map(async (doc) => {
+        const sessionData = doc.data();
+        const participants = sessionData.participants || [];
+        const userIndex = participants.findIndex(p => p.uid === user.uid);
+        
+        if (userIndex !== -1) {
+          participants[userIndex].gender = newGender;
+          await setDoc(doc.ref, {
+            participants,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+
+        // Also update if user is the session creator
+        if (sessionData.userId === user.uid) {
+          await setDoc(doc.ref, {
+            gender: newGender,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      });
+
+      await Promise.all(updatePromises);
+      
+      setUser(prevUser => ({
+        ...prevUser,
+        gender: newGender
+      }));
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating gender:", error);
+      setError(error.message);
+      throw error;
+    }
+  }
+
   async function logout() {
     try {
       await signOut(firebase.auth);
@@ -288,6 +403,7 @@ export function AuthProvider({ children }) {
               ...userData,
               photoURL: userData.photoURL || googlePhotoURL || firebaseUser.photoURL,
               major: userData.major || '',
+              gender: userData.gender || '',
               isHornet: userData.isHornet || false,
               createdAt: userData.createdAt
             });
@@ -315,6 +431,7 @@ export function AuthProvider({ children }) {
     updateMajor,
     updateDisplayName,
     updateProfilePicture,
+    updateGender,
     upgradeToHornet,
     downgradeFromHornet,
     error,

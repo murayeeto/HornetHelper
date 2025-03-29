@@ -1,5 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./StudyWithBuddy.css";
+import { useAuth } from "../contexts/AuthContext";
+import {
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy,
+    serverTimestamp,
+    doc,
+    setDoc,
+    arrayUnion
+} from 'firebase/firestore';
+import firebase from '../firebase';
 
 function HomeScreen({ setScreen }) {
     return (
@@ -36,15 +49,102 @@ function HomeScreen({ setScreen }) {
 }
 
 function DuoSessions({ setScreen }) {
+    const { user } = useAuth();
     const [subject, setSubject] = useState("");
     const [dateTime, setDateTime] = useState("");
     const [location, setLocation] = useState("");
     const [selectedCourse, setSelectedCourse] = useState("");
     const [gender, setGender] = useState("");
+    const [sessions, setSessions] = useState([]);
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        const fetchSessions = async () => {
+            try {
+                const sessionsRef = collection(firebase.db, 'sessions');
+                const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const sessionData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setSessions(sessionData);
+            } catch (error) {
+                console.error("Error fetching sessions:", error);
+            }
+        };
+        fetchSessions();
+    }, []);
+
+    const handleJoinSession = async (sessionId) => {
+        try {
+            const sessionRef = doc(firebase.db, 'sessions', sessionId);
+            await setDoc(sessionRef, {
+                participants: arrayUnion({
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                })
+            }, { merge: true });
+
+            // Update local state
+            setSessions(prevSessions =>
+                prevSessions.map(session =>
+                    session.id === sessionId
+                        ? {
+                            ...session,
+                            participants: [...(session.participants || []), {
+                                uid: user.uid,
+                                displayName: user.displayName,
+                                photoURL: user.photoURL
+                            }]
+                        }
+                        : session
+                )
+            );
+        } catch (error) {
+            console.error("Error joining session:", error);
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle session creation logic here
+        try {
+            const sessionData = {
+                subject,
+                dateTime,
+                location,
+                course: selectedCourse,
+                gender,
+                userId: user.uid,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                createdAt: serverTimestamp(),
+                participants: [{
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                }],
+                userGender: gender
+            };
+
+            const docRef = await addDoc(collection(firebase.db, 'sessions'), sessionData);
+            
+            // Add the new session to the state
+            setSessions(prevSessions => [{
+                id: docRef.id,
+                ...sessionData,
+                createdAt: new Date() // Use current date for immediate display
+            }, ...prevSessions]);
+
+            // Clear form
+            setSubject("");
+            setDateTime("");
+            setLocation("");
+            setSelectedCourse("");
+            setGender("");
+        } catch (error) {
+            console.error("Error creating session:", error);
+        }
     };
 
     return (
@@ -114,54 +214,86 @@ function DuoSessions({ setScreen }) {
 
                 <div className="filter-group">
                     <label>Gender:</label>
-                    <input
-                        type="radio"
-                        id="male"
-                        name="gender"
-                        value="M"
-                        checked={gender === "M"}
-                        onChange={(e) => setGender(e.target.value)}
-                    />
-                    <label htmlFor="male">M</label>
-                    <input
-                        type="radio"
-                        id="female"
-                        name="gender"
-                        value="F"
-                        checked={gender === "F"}
-                        onChange={(e) => setGender(e.target.value)}
-                    />
-                    <label htmlFor="female">F</label>
+                    <div className="gender-options">
+                        <label className="gender-option">
+                            <input
+                                type="radio"
+                                name="gender"
+                                value="M"
+                                checked={gender === "M"}
+                                onChange={(e) => setGender(e.target.value)}
+                            />
+                            M
+                        </label>
+                        <label className="gender-option">
+                            <input
+                                type="radio"
+                                name="gender"
+                                value="F"
+                                checked={gender === "F"}
+                                onChange={(e) => setGender(e.target.value)}
+                            />
+                            F
+                        </label>
+                        <label className="gender-option">
+                            <input
+                                type="radio"
+                                name="gender"
+                                value="O"
+                                checked={gender === "O"}
+                                onChange={(e) => setGender(e.target.value)}
+                            />
+                            Other
+                        </label>
+                    </div>
                 </div>
 
                 <button className="action-btn">View Open Sessions</button>
             </div>
 
-            <div className="session-cards">
-                <div className="session-card">
-                    <img
-                        src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                        alt="Valery Louis"
-                        className="profile-img"
-                    />
-                    <h3>Valery Louis</h3>
-                    <p>Course: Computer Networking</p>
-                    <p>Time: 04/01/25 at 4:00pm</p>
-                    <p>Place: William C. Jason Library</p>
-                    <button className="join-btn">Join Session</button>
-                </div>
-
-                <div className="session-card">
-                    <img
-                        src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-                        alt="Matthew Little"
-                        className="profile-img"
-                    />
-                    <h3>Matthew Little</h3>
-                    <p>Course: Computer Networking</p>
-                    <p>Time: 04/01/25 at 4:00pm</p>
-                    <p>Place: William C. Jason Library</p>
-                    <button className="join-btn">Join Session</button>
+            <div className="session-section">
+                <h2>Available Study Sessions</h2>
+                <div className="session-cards">
+                    {sessions.map(session => {
+                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+                        return (
+                            <div key={session.id} className="session-card">
+                                <img
+                                    src={session.photoURL || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
+                                    alt={session.displayName}
+                                    className="profile-img"
+                                />
+                                <h3>{session.displayName}</h3>
+                                <p>Course: {session.course || session.subject}</p>
+                                <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
+                                <p>Place: {session.location}</p>
+                                <div className="participants-list">
+                                    <h4>Participants:</h4>
+                                    <div className="participant-grid">
+                                        {session.participants?.map(participant => (
+                                            <div key={participant.uid} className="participant-item">
+                                                <img
+                                                    src={participant.photoURL || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
+                                                    alt={participant.displayName}
+                                                    className="participant-img"
+                                                />
+                                                <span>{participant.displayName}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                {user.uid !== session.userId && (
+                                    <button
+                                        className={`join-btn ${isParticipant ? 'joined' : ''}`}
+                                        onClick={() => !isParticipant && handleJoinSession(session.id)}
+                                        disabled={isParticipant}
+                                    >
+                                        {isParticipant ? 'Joined' : 'Join Session'}
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
