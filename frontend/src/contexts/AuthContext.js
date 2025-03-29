@@ -3,7 +3,8 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  updateProfile
 } from 'firebase/auth';
 import { 
   doc, 
@@ -44,7 +45,6 @@ export function AuthProvider({ children }) {
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
-        // Create new user document
         await setDoc(userRef, {
           email: result.user.email,
           displayName: result.user.displayName,
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
       if (!user) throw new Error("No authenticated user");
       if (newDisplayName.length > 14) throw new Error("Display name must be 14 characters or less");
       
-      await updateProfile(firebase.auth.currentUser, {
+      await updateProfile(user, {
         displayName: newDisplayName
       });
 
@@ -111,60 +111,71 @@ export function AuthProvider({ children }) {
         throw new Error("File size must be less than 5MB");
       }
 
-      const timestamp = Date.now();
-      const newImagePath = `images/${user.uid}/profile/${timestamp}.jpg`;
+      // First, try to delete the old profile picture
+      const userRef = doc(firebase.db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
       
-      try {
-        const userRef = doc(firebase.db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (userSnap.exists() && userSnap.data().photoURL) {
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.photoURL && userData.photoURL.includes('firebasestorage.googleapis.com')) {
           try {
-            const oldURL = userSnap.data().photoURL;
-            if (oldURL.includes('firebasestorage')) {
-              const pathStart = oldURL.indexOf('/o/') + 3;
-              const pathEnd = oldURL.indexOf('?');
-              const oldPath = decodeURIComponent(oldURL.substring(pathStart, pathEnd !== -1 ? pathEnd : undefined));
-              
-              const oldRef = ref(firebase.storage, oldPath);
-              await deleteObject(oldRef);
-              console.log('Old profile picture deleted');
-            }
+            // Extract the old file path from the URL
+            const oldUrl = new URL(userData.photoURL);
+            const oldPath = decodeURIComponent(oldUrl.pathname.split('/o/')[1].split('?')[0]);
+            const oldRef = ref(firebase.storage, oldPath);
+            await deleteObject(oldRef);
+            console.log('Old profile picture deleted successfully');
           } catch (deleteError) {
-            console.log('No old profile picture to delete or error deleting:', deleteError);
+            console.log('Error deleting old profile picture:', deleteError);
+            // Continue with upload even if delete fails
           }
         }
-
-        const newRef = ref(firebase.storage, newImagePath);
-        const metadata = {
-          contentType: file.type,
-        };
-
-        const uploadTask = await uploadBytes(newRef, file, metadata);
-        console.log('Upload successful:', uploadTask);
-
-        const downloadURL = await getDownloadURL(uploadTask.ref);
-        console.log('File available at:', downloadURL);
-
-        await updateProfile(firebase.auth.currentUser, {
-          photoURL: downloadURL
-        });
-
-        await setDoc(userRef, {
-          photoURL: downloadURL,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-
-        setUser(prevUser => ({
-          ...prevUser,
-          photoURL: downloadURL
-        }));
-
-        return true;
-      } catch (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
       }
+
+      // Upload new image
+      const timestamp = Date.now();
+      const newImagePath = `images/${user.uid}/profile/${timestamp}_${file.name}`;
+      const newRef = ref(firebase.storage, newImagePath);
+      
+      // Set proper metadata
+      const metadata = {
+        contentType: file.type,
+        cacheControl: 'public, max-age=31536000'
+      };
+
+      // Upload the new file
+      const uploadTask = await uploadBytes(newRef, file, metadata);
+      console.log('New profile picture uploaded successfully');
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(uploadTask.ref);
+
+      // Update Firestore first
+      await setDoc(userRef, {
+        photoURL: downloadURL,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // Update auth profile
+      await updateProfile(firebase.auth.currentUser, {
+        photoURL: downloadURL
+      });
+
+      // Force refresh the token to ensure new photoURL is included
+      await firebase.auth.currentUser.reload();
+      
+      // Get fresh user data
+      const freshUserSnap = await getDoc(userRef);
+      const freshUserData = freshUserSnap.data();
+
+      // Update local state with fresh data
+      setUser(prevUser => ({
+        ...prevUser,
+        ...freshUserData,
+        photoURL: downloadURL
+      }));
+
+      return downloadURL;
     } catch (error) {
       console.error('Error in updateProfilePicture:', error);
       setError(error.message);
@@ -195,19 +206,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function upgradeToHornet() {
+  async function updateMajor(newMajor) {
     try {
       if (!user) throw new Error("No authenticated user");
       
       const userRef = doc(firebase.db, 'users', user.uid);
       await setDoc(userRef, {
-        major,
+        major: newMajor,
         updatedAt: serverTimestamp()
       }, { merge: true });
       
       setUser(prevUser => ({
         ...prevUser,
-        major
+        major: newMajor
       }));
       
       return true;
@@ -220,7 +231,7 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await signOut(auth);
+      await signOut(firebase.auth);
       setUser(null);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -230,7 +241,7 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(firebase.auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
           const userRef = doc(firebase.db, 'users', firebaseUser.uid);
@@ -240,7 +251,8 @@ export function AuthProvider({ children }) {
             const userData = userSnap.data();
             const googlePhotoURL = firebaseUser.photoURL?.replace('s96-c', 's400-c');
             
-            if (googlePhotoURL && userData.photoURL !== googlePhotoURL) {
+            // Only update photoURL from Google if user hasn't set a custom one
+            if (!userData.photoURL && googlePhotoURL) {
               await setDoc(userRef, {
                 photoURL: googlePhotoURL,
                 updatedAt: serverTimestamp()
@@ -250,8 +262,9 @@ export function AuthProvider({ children }) {
             
             setUser({
               ...firebaseUser,
-              photoURL: userData.photoURL || firebaseUser.photoURL,
-              major: userData.major,
+              ...userData,
+              photoURL: userData.photoURL || googlePhotoURL || firebaseUser.photoURL,
+              major: userData.major || '',
               isHornet: userData.isHornet || false,
               createdAt: userData.createdAt
             });
