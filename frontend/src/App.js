@@ -10,9 +10,8 @@ import Footer from './components/Footer';
 
 // Pages
 import Home from './pages/Home';
-import Category2 from './pages/Category2';
 import Calendar from './pages/Calendar';
-import AI from './pages/AI';
+import Faq from './pages/Faq';
 import Account from './pages/Account';
 import StudyWithBuddy from './pages/StudyWithBuddy';
 import Pricing from './pages/Pricing'
@@ -47,10 +46,10 @@ function App() {
                 }
               />
               <Route
-                path="/ai"
+                path="/faq"
                 element={
                   <PrivateRoute>
-                    <AI />
+                    <Faq />
                   </PrivateRoute>
                 }
               />

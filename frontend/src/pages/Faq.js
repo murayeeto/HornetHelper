@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './AI.css';
+import './Faq.css';
 
-const AI = () => {
+const Faq = () => {
   const [aiData, setAiData] = useState({
-    title: "AI Solutions",
-    items: ["Machine Learning", "Natural Language Processing", "Computer Vision"]
+    title: "Something title like",
+    items: ["Thing1", "Thing2", "Thing3"]
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,15 +37,13 @@ const AI = () => {
     <div className="ai-page">
       <div className="ai-container">
         <h1>{aiData.title}</h1>
-        <p>Discover the power of artificial intelligence and how it can transform your experience</p>
+        <p>Discover the power of blah blah blah</p>
       </div>
 
       <div className="page-content">
-        <h2>Our AI Solutions</h2>
+        <h2>Something big</h2>
         <p>
-          At Hornet Helper, we leverage cutting-edge AI technologies to provide innovative solutions 
-          that enhance user experience and solve complex problems. Our AI solutions are designed to 
-          be intuitive, efficient, and powerful.
+          blah blah blah
         </p>
 
         <div className="ai-solutions">
@@ -53,11 +51,8 @@ const AI = () => {
             <div key={index} className="ai-solution-card">
               <h3>{item}</h3>
               <p>
-                Our {item} solutions utilize advanced algorithms and models to deliver 
-                exceptional results. We continuously improve our AI capabilities to stay 
-                at the forefront of technological innovation.
+                blah blah blah
               </p>
-              <button className="btn btn-secondary">Learn More</button>
             </div>
           ))}
         </div>
@@ -88,4 +83,4 @@ const AI = () => {
   );
 };
 
-export default AI;
+export default Faq;
