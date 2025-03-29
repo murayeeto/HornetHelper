@@ -62,6 +62,8 @@ function DuoSessions({ setScreen }) {
     const [selectedDepartment, setSelectedDepartment] = useState("");
     const [gender, setGender] = useState("");
     const [sessions, setSessions] = useState([]);
+    const [filteredSessions, setFilteredSessions] = useState([]);
+    const [showFiltered, setShowFiltered] = useState(false);
 
     // Get all majors from all departments
     const allMajors = Object.values(departmentsAndMajors).flat();
@@ -77,12 +79,24 @@ function DuoSessions({ setScreen }) {
                     ...doc.data()
                 }));
                 setSessions(sessionData);
+                setFilteredSessions(sessionData);
             } catch (error) {
                 console.error("Error fetching sessions:", error);
             }
         };
         fetchSessions();
     }, []);
+
+    useEffect(() => {
+        if (showFiltered && selectedDepartment) {
+            const filtered = sessions.filter(session =>
+                departmentsAndMajors[selectedDepartment]?.includes(session.major)
+            );
+            setFilteredSessions(filtered);
+        } else {
+            setFilteredSessions(sessions);
+        }
+    }, [selectedDepartment, sessions, showFiltered]);
 
     const handleLeaveSession = async (sessionId) => {
         try {
@@ -420,17 +434,19 @@ function DuoSessions({ setScreen }) {
                         </label>
                     </div>
                 </div>
+<button
+    className="action-btn"
+    onClick={() => setShowFiltered(!showFiltered)}
+>
+    {showFiltered ? 'Show All Sessions' : 'View Open Sessions'}
+</button>
+</div>
 
-                <button className="action-btn">View Open Sessions</button>
-            </div>
-
-            <div className="session-section">
-                <h2>Available Study Sessions</h2>
-                <div className="session-cards">
-                    {sessions
-                        .filter(session => !selectedDepartment || departmentsAndMajors[selectedDepartment].includes(session.major))
-                        .map(session => {
-                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+<div className="session-section">
+<h2>Available Study Sessions</h2>
+<div className="session-cards">
+    {filteredSessions.map((session) => {
+        const isParticipant = session.participants?.some(p => p.uid === user.uid);
                         return (
                             <div key={session.id} className="session-card">
                                 <img
