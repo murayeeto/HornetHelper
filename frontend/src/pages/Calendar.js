@@ -1,14 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import './Calendar.css';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import firebase from '../firebase';
 
 const Calendar = () => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [dimensions, setDimensions] = useState({ 
+  const [dimensions, setDimensions] = useState({
     width: window.innerWidth * 0.8,
     height: window.innerHeight * 0.8
   });
   const [selectedDay, setSelectedDay] = useState(null);
   const [events, setEvents] = useState({});
+  
+  // Load events from Firebase when component mounts
+  useEffect(() => {
+    const loadEvents = async () => {
+      if (!user) return;
+      
+      try {
+        const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+        const eventsSnap = await getDoc(eventsRef);
+        
+        if (eventsSnap.exists()) {
+          setEvents(eventsSnap.data().events || {});
+        }
+      } catch (error) {
+        console.error("Error loading events:", error);
+      }
+    };
+
+    loadEvents();
+  }, [user]);
   const [newEvent, setNewEvent] = useState({
     hour: '9',
     minute: '00',
@@ -76,16 +100,16 @@ const Calendar = () => {
     return hour24 + (minute / 60);
   };
 
-  const addTimeEvent = () => {
-    if (!newEvent.title) return;
+  const addTimeEvent = async () => {
+    if (!newEvent.title || !user) return;
 
     const timeValue = convertToTimeValue(newEvent.hour, newEvent.minute, newEvent.period);
     const dateKey = formatDateKey(selectedDay);
     
-    setEvents(prev => ({
-      ...prev,
+    const newEvents = {
+      ...events,
       [dateKey]: {
-        ...prev[dateKey],
+        ...events[dateKey],
         [timeValue]: {
           id: Date.now(),
           title: newEvent.title,
@@ -93,15 +117,27 @@ const Calendar = () => {
           displayTime: `${newEvent.hour}:${newEvent.minute} ${newEvent.period}`
         }
       }
-    }));
-    
-    setNewEvent(prev => ({
-      hour: '9',
-      minute: '00',
-      period: 'AM',
-      title: '',
-      color: '#4a6fa5'
-    }));
+    };
+
+    try {
+      // Save to Firebase
+      const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+      await setDoc(eventsRef, { events: newEvents }, { merge: true });
+      
+      // Update local state
+      setEvents(newEvents);
+      
+      // Reset form
+      setNewEvent({
+        hour: '9',
+        minute: '00',
+        period: 'AM',
+        title: '',
+        color: '#4a6fa5'
+      });
+    } catch (error) {
+      console.error("Error saving event:", error);
+    }
   };
 
   const renderTimeline = () => {
