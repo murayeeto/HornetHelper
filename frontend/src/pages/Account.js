@@ -5,7 +5,7 @@ import './Account.css';
 const DEFAULT_PROFILE_PIC = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
 
 const Account = () => {
-  const { user, updateMajor, updateDisplayName, updateProfilePicture, upgradeToHornet } = useAuth();
+  const { user, updateMajor, updateDisplayName, updateProfilePicture, upgradeToHornet, downgradeFromHornet } = useAuth();
   const [major, setMajor] = useState(user?.major || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isEditingMajor, setIsEditingMajor] = useState(false);
@@ -223,7 +223,7 @@ const Account = () => {
               <label>Account Status</label>
               <div className="info-display">
                 <p>{user.isHornet ? 'Hornet' : 'Standard'}</p>
-                {!user.isHornet && (
+                {!user.isHornet ? (
                   <button
                     onClick={() => {
                       if (window.confirm('Would you like to upgrade to Hornet status?')) {
@@ -235,6 +235,19 @@ const Account = () => {
                     className="edit-btn"
                   >
                     ↑ Upgrade
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Would you like to downgrade back to Standard status?')) {
+                        downgradeFromHornet()
+                          .then(() => setMessage('Successfully downgraded to Standard!'))
+                          .catch(error => setMessage(error.message));
+                      }
+                    }}
+                    className="edit-btn"
+                  >
+                    ↓ Downgrade
                   </button>
                 )}
               </div>
