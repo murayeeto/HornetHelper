@@ -220,8 +220,15 @@ function DuoSessions({ setScreen }) {
         <div className="duo-container">
             <div className="duo-grid">
                 <div className="create-session">
-                    <h2>Create new session</h2>
-                    <form onSubmit={handleSubmit}>
+                    <h2>Create new session {!user && <span style={{color: '#ff6b6b'}}>(Login required)</span>}</h2>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!user) {
+                            alert('Please login to create a session');
+                            return;
+                        }
+                        handleSubmit(e);
+                    }}>
                         <div className="form-group">
                             <label>Course</label>
                             <input
@@ -421,7 +428,7 @@ function DuoSessions({ setScreen }) {
                 <h2>Available Study Sessions</h2>
                 <div className="session-cards">
                     {filteredSessions.map((session) => {
-                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+                        const isParticipant = user ? session.participants?.some(p => p.uid === user.uid) : false;
                         return (
                             <div key={session.id} className="session-card">
                                 <img
@@ -455,7 +462,21 @@ function DuoSessions({ setScreen }) {
                                     </div>
                                 </div>
                                 <div className="session-actions">
-                                    {user.uid === session.userId ? (
+                                    {session.full ? (
+                                        <button
+                                            className="join-btn full"
+                                            disabled={true}
+                                        >
+                                            Session Full
+                                        </button>
+                                    ) : !user ? (
+                                        <button
+                                            className="join-btn"
+                                            onClick={() => alert('Please login to join sessions')}
+                                        >
+                                            Login to Join
+                                        </button>
+                                    ) : user.uid === session.userId ? (
                                         <button
                                             className="disband-btn"
                                             onClick={() => {
@@ -694,8 +715,15 @@ function GroupSessions({ setScreen }) {
         <div className="duo-container">
             <div className="duo-grid">
                 <div className="create-session">
-                    <h2>Create new group session</h2>
-                    <form onSubmit={handleSubmit}>
+                    <h2>Create new group session {!user && <span style={{color: '#ff6b6b'}}>(Login required)</span>}</h2>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!user) {
+                            alert('Please login to create a session');
+                            return;
+                        }
+                        handleSubmit(e);
+                    }}>
                         <div className="form-group">
                             <label>Course</label>
                             <input
@@ -875,7 +903,7 @@ function GroupSessions({ setScreen }) {
                 <h2>Available Group Sessions</h2>
                 <div className="session-cards">
                     {filteredSessions.map((session) => {
-                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+                        const isParticipant = user ? session.participants?.some(p => p.uid === user.uid) : false;
                         const participantCount = session.participants?.length || 0;
                         return (
                             <div key={session.id} className="session-card">
@@ -914,7 +942,21 @@ function GroupSessions({ setScreen }) {
                                 <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
                                 <p>Place: {session.location}</p>
                                 <div className="session-actions">
-                                    {user.uid === session.userId ? (
+                                    {participantCount >= session.capacity ? (
+                                        <button
+                                            className="join-btn full"
+                                            disabled={true}
+                                        >
+                                            Session Full
+                                        </button>
+                                    ) : !user ? (
+                                        <button
+                                            className="join-btn"
+                                            onClick={() => alert('Please login to join sessions')}
+                                        >
+                                            Login to Join
+                                        </button>
+                                    ) : user.uid === session.userId ? (
                                         <button
                                             className="disband-btn"
                                             onClick={() => {
