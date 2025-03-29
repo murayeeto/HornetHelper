@@ -556,6 +556,7 @@ function DuoSessions({ setScreen }) {
                         sessionId={activeChatSession}
                         isOpen={true}
                         onClose={() => setActiveChatSession(null)}
+                        isHornet={user?.isHornet}
                     />
                 </>
             )}
@@ -1095,6 +1096,7 @@ function GroupSessions({ setScreen }) {
                         sessionId={activeChatSession}
                         isOpen={true}
                         onClose={() => setActiveChatSession(null)}
+                        isHornet={user?.isHornet}
                     />
                 </>
             )}

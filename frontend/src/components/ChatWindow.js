@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc } from 'firebase/firestore';
+import { FaRobot } from 'react-icons/fa';
 import firebase from '../firebase';
 import './ChatWindow.css';
 
-const ChatWindow = ({ sessionId, isOpen, onClose }) => {
+const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const messagesContainerRef = useRef(null);
@@ -63,7 +64,19 @@ const ChatWindow = ({ sessionId, isOpen, onClose }) => {
         <div className="chat-window">
             <div className="chat-header">
                 <h3>The Hive</h3>
-                <button onClick={onClose} className="close-button">&times;</button>
+                <div className="header-controls">
+                    {isHornet && (
+                        <FaRobot 
+                            className="robot-icon"
+                            style={{ 
+                                fontSize: '20px',
+                                marginRight: '10px',
+                                color: 'white'
+                            }}
+                        />
+                    )}
+                    <button onClick={onClose} className="close-button">&times;</button>
+                </div>
             </div>
             <div className="messages-container" ref={messagesContainerRef}>
                 <div style={{ position: 'relative', minHeight: '100%' }}>
