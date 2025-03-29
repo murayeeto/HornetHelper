@@ -1,6 +1,6 @@
 :root {
   --primary-blue: #0047AB;
-  --primary-red: #D22B2B;
+  --primary-red: rgb(210, 43, 43);
   --primary-white: #FFFFFF;
   --light-blue: #6495ED;
   --light-red: #FF6B6B;
