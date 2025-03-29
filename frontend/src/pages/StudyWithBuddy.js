@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./StudyWithBuddy.css";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import {
@@ -11,15 +12,13 @@ import {
     orderBy,
     serverTimestamp,
     doc,
-    setDoc,
-    deleteDoc,
-    arrayUnion,
-    arrayRemove,
     getDoc
 } from 'firebase/firestore';
 import firebase from '../firebase';
 import dsuCampusLocations from '../data/dsuCampusLocations';
 import departmentsAndMajors from '../data/departmentsAndMajors';
+import Calendar from './Calendar';
+import { useSessionHandlers, addToCalendar } from '../utils/sessionHandlers';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -59,6 +58,7 @@ function HomeScreen({ setScreen }) {
 
 function DuoSessions({ setScreen }) {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [dateTime, setDateTime] = useState("");
     const [location, setLocation] = useState("");
     const [selectedCourse, setSelectedCourse] = useState("");
@@ -68,6 +68,8 @@ function DuoSessions({ setScreen }) {
     const [sessions, setSessions] = useState([]);
     const [filteredSessions, setFilteredSessions] = useState([]);
     const [showFiltered, setShowFiltered] = useState(false);
+
+    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'sessions');
 
     // Get all majors from all departments
     const allMajors = Object.values(departmentsAndMajors).flat();
@@ -102,176 +104,6 @@ function DuoSessions({ setScreen }) {
         }
     }, [selectedDepartment, sessions, showFiltered]);
 
-    const handleLeaveSession = async (sessionId) => {
-        try {
-            const sessionRef = doc(firebase.db, 'sessions', sessionId);
-            const session = sessions.find(s => s.id === sessionId);
-            
-            // Remove from calendar
-            await removeFromCalendar(session);
-            
-            await setDoc(sessionRef, {
-                participants: arrayRemove({
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
-                }),
-                full: false,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
-
-            // Update local state
-            setSessions(prevSessions =>
-                prevSessions.map(session =>
-                    session.id === sessionId
-                        ? {
-                            ...session,
-                            participants: session.participants.filter(p => p.uid !== user.uid),
-                            full: false
-                        }
-                        : session
-                )
-            );
-        } catch (error) {
-            console.error("Error leaving session:", error);
-        }
-    };
-
-    const removeFromCalendar = async (sessionData) => {
-        try {
-            const [datePart, timePart] = sessionData.dateTime.split('T');
-            const [hours, minutes] = timePart.split(':');
-            const timeValue = parseInt(hours, 10) + (parseInt(minutes, 10) / 60);
-            const dateKey = datePart;
-
-            // Get current calendar events
-            const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
-            const eventsSnap = await getDoc(eventsRef);
-            
-            if (eventsSnap.exists()) {
-                const currentEvents = eventsSnap.data().events || {};
-                
-                if (currentEvents[dateKey] && currentEvents[dateKey][timeValue]) {
-                    delete currentEvents[dateKey][timeValue];
-                    
-                    // Clean up empty dates
-                    if (Object.keys(currentEvents[dateKey]).length === 0) {
-                        delete currentEvents[dateKey];
-                    }
-                    
-                    // Update Firebase
-                    await setDoc(eventsRef, { events: currentEvents });
-                }
-            }
-        } catch (error) {
-            console.error("Error removing from calendar:", error);
-        }
-    };
-
-    const handleDisbandSession = async (sessionId) => {
-        try {
-            const session = sessions.find(s => s.id === sessionId);
-            const sessionRef = doc(firebase.db, 'sessions', sessionId);
-            
-            // Remove from calendar
-            await removeFromCalendar(session);
-            
-            // Delete session
-            await deleteDoc(sessionRef);
-
-            // Update local state
-            setSessions(prevSessions =>
-                prevSessions.filter(session => session.id !== sessionId)
-            );
-        } catch (error) {
-            console.error("Error disbanding session:", error);
-        }
-    };
-
-    const addToCalendar = async (sessionData) => {
-        try {
-            // Create date in local timezone
-            const [datePart, timePart] = sessionData.dateTime.split('T');
-            const [hours, minutes] = timePart.split(':');
-            const date = new Date(datePart);
-            date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-            
-            const dateKey = datePart;
-            const period = parseInt(hours, 10) >= 12 ? 'PM' : 'AM';
-            const displayHours = parseInt(hours, 10) % 12 || 12;
-            const timeValue = parseInt(hours, 10) + (parseInt(minutes, 10) / 60);
-
-            // Get current calendar events
-            const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
-            const eventsSnap = await getDoc(eventsRef);
-            const currentEvents = eventsSnap.exists() ? eventsSnap.data().events || {} : {};
-
-            // Create new event
-            const newEvents = {
-                ...currentEvents,
-                [dateKey]: {
-                    ...(currentEvents[dateKey] || {}),
-                    [timeValue]: {
-                        id: Date.now(),
-                        title: `Study Session: ${sessionData.course}`,
-                        color: '#00A7E3',
-                        displayTime: `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
-                    }
-                }
-            };
-
-            // Update Firebase
-            await setDoc(eventsRef, { events: newEvents }, { merge: true });
-        } catch (error) {
-            console.error("Error adding to calendar:", error);
-        }
-    };
-
-    const handleJoinSession = async (sessionId) => {
-        try {
-            const sessionRef = doc(firebase.db, 'sessions', sessionId);
-            const session = sessions.find(s => s.id === sessionId);
-            
-            if (session.participants?.length >= 2) {
-                alert("Session is full, please join another one");
-                return;
-            }
-
-            const newParticipant = {
-                uid: user.uid,
-                displayName: user.displayName,
-                photoURL: user.photoURL
-            };
-
-            const updatedParticipants = [...(session.participants || []), newParticipant];
-            const isFull = updatedParticipants.length === 2;
-
-            await setDoc(sessionRef, {
-                participants: arrayUnion(newParticipant),
-                full: isFull,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
-
-            // Add to calendar
-            await addToCalendar(session);
-
-            // Update local state
-            setSessions(prevSessions =>
-                prevSessions.map(session =>
-                    session.id === sessionId
-                        ? {
-                            ...session,
-                            participants: updatedParticipants,
-                            full: isFull
-                        }
-                        : session
-                )
-            );
-        } catch (error) {
-            console.error("Error joining session:", error);
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -297,15 +129,17 @@ function DuoSessions({ setScreen }) {
 
             const docRef = await addDoc(collection(firebase.db, 'sessions'), sessionData);
             
-            // Add to calendar
-            await addToCalendar(sessionData);
-            
-            // Add the new session to the state
-            setSessions(prevSessions => [{
+            const newSession = {
                 id: docRef.id,
                 ...sessionData,
-                createdAt: new Date() // Use current date for immediate display
-            }, ...prevSessions]);
+                createdAt: new Date()
+            };
+            
+            // Add the new session to the state
+            setSessions(prevSessions => [newSession, ...prevSessions]);
+
+            // Add to calendar
+            await addToCalendar(newSession, 'sessions', user);
 
             // Clear form
             setDateTime("");
@@ -441,11 +275,10 @@ function DuoSessions({ setScreen }) {
             </div>
 
             <div className="action-buttons">
-                <button className="action-btn">View Calendar</button>
+                <button className="action-btn" onClick={() => navigate("/calendar")}>View Calendar</button>
                 <button className="action-btn" onClick={() => setScreen("group")}>
                     Switch to Group Session
                 </button>
-                <button className="action-btn">Ask AI for help</button>
             </div>
 
             <div className="filters">
@@ -592,14 +425,404 @@ function DuoSessions({ setScreen }) {
 }
 
 function GroupSessions({ setScreen }) {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [dateTime, setDateTime] = useState("");
+    const [location, setLocation] = useState("");
+    const [selectedCourse, setSelectedCourse] = useState("");
+    const [selectedMajor, setSelectedMajor] = useState("");
+    const [selectedDepartment, setSelectedDepartment] = useState("");
+    const [capacity, setCapacity] = useState(3);
+    const [sessions, setSessions] = useState([]);
+    const [filteredSessions, setFilteredSessions] = useState([]);
+    const [showFiltered, setShowFiltered] = useState(false);
+    const [selectedSession, setSelectedSession] = useState(null);
+
+    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'groupSessions');
+
+    const handleCapacityClick = (session, event) => {
+        event.stopPropagation();
+        setSelectedSession(selectedSession?.id === session.id ? null : session);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (selectedSession && !event.target.closest('.participants-menu') && !event.target.closest('.capacity-indicator')) {
+                setSelectedSession(null);
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [selectedSession]);
+
+    // Add styles for the capacity indicator
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .capacity-indicator {
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            .capacity-indicator:hover {
+                transform: scale(1.05);
+            }
+        `;
+        document.head.appendChild(style);
+        return () => document.head.removeChild(style);
+    }, []);
+
+    // Get all majors from all departments
+    const allMajors = Object.values(departmentsAndMajors).flat();
+
+    useEffect(() => {
+        const fetchSessions = async () => {
+            try {
+                const sessionsRef = collection(firebase.db, 'groupSessions');
+                const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const sessionData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setSessions(sessionData);
+                setFilteredSessions(sessionData);
+            } catch (error) {
+                console.error("Error fetching sessions:", error);
+            }
+        };
+        fetchSessions();
+    }, []);
+
+    useEffect(() => {
+        if (showFiltered && selectedDepartment) {
+            const filtered = sessions.filter(session =>
+                departmentsAndMajors[selectedDepartment]?.includes(session.major)
+            );
+            setFilteredSessions(filtered);
+        } else {
+            setFilteredSessions(sessions);
+        }
+    }, [selectedDepartment, sessions, showFiltered]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const sessionData = {
+                course: selectedCourse,
+                major: selectedMajor,
+                dateTime,
+                location,
+                capacity: parseInt(capacity),
+                userId: user.uid,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                createdAt: serverTimestamp(),
+                participants: [{
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                }],
+                full: false,
+                active: true
+            };
+
+            const docRef = await addDoc(collection(firebase.db, 'groupSessions'), sessionData);
+            
+            const newSession = {
+                id: docRef.id,
+                ...sessionData,
+                createdAt: new Date()
+            };
+            
+            // Add the new session to the state
+            setSessions(prevSessions => [newSession, ...prevSessions]);
+
+            // Add to calendar
+            await addToCalendar(newSession, 'groupSessions', user);
+
+            // Clear form
+            setDateTime("");
+            setLocation("");
+            setSelectedCourse("");
+            setSelectedMajor("");
+            setSelectedDepartment("");
+            setCapacity(3);
+        } catch (error) {
+            console.error("Error creating session:", error);
+        }
+    };
+
     return (
-        <section className="session-container">
-            <h1 className="title">Group Sessions</h1>
-            <p className="description">Join a group study session and learn together.</p>
+        <div className="duo-container">
+            <div className="duo-grid">
+                <div className="create-session">
+                    <h2>Create new group session</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Course</label>
+                            <input
+                                type="text"
+                                value={selectedCourse}
+                                onChange={(e) => setSelectedCourse(e.target.value)}
+                                placeholder="Enter course (e.g. COMP 3700)"
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Major</label>
+                            <select
+                                value={selectedMajor}
+                                onChange={(e) => setSelectedMajor(e.target.value)}
+                                required
+                            >
+                                <option value="">Select major</option>
+                                {allMajors.map(major => (
+                                    <option key={major} value={major}>
+                                        {major}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Date/Time</label>
+                            <input
+                                type="datetime-local"
+                                value={dateTime}
+                                onChange={(e) => setDateTime(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Location</label>
+                            <select
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                required
+                            >
+                                <option value="">Select location</option>
+                                {dsuCampusLocations.map(loc => (
+                                    <option key={loc.name} value={loc.name}>
+                                        {loc.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Capacity</label>
+                            <input
+                                type="number"
+                                min="3"
+                                max="10"
+                                value={capacity}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (val >= 3 && val <= 10) {
+                                        setCapacity(val);
+                                    }
+                                }}
+                                required
+                            />
+                        </div>
+                        <button type="submit" className="submit-btn">Submit</button>
+                    </form>
+                </div>
+
+                <div className="stats-section">
+                    <h2>Number of active sessions: {sessions.filter(s => s.active).length}</h2>
+                    <h3>Sessions by Department:</h3>
+                    <div style={{ width: '300px', height: '300px', margin: '0 auto' }}>
+                        <Pie
+                            data={{
+                                labels: Object.keys(departmentsAndMajors),
+                                datasets: [{
+                                    data: Object.keys(departmentsAndMajors).map(dept => 
+                                        sessions.filter(session => 
+                                            departmentsAndMajors[dept].includes(session.major)
+                                        ).length
+                                    ),
+                                    backgroundColor: [
+                                        '#FF6384',
+                                        '#36A2EB',
+                                        '#FFCE56',
+                                        '#4BC0C0',
+                                        '#9966FF',
+                                        '#FF9F40',
+                                        '#FF6384',
+                                        '#36A2EB'
+                                    ],
+                                    borderColor: [
+                                        '#FF6384',
+                                        '#36A2EB',
+                                        '#FFCE56',
+                                        '#4BC0C0',
+                                        '#9966FF',
+                                        '#FF9F40',
+                                        '#FF6384',
+                                        '#36A2EB'
+                                    ],
+                                    borderWidth: 1,
+                                }]
+                            }}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'right',
+                                        labels: {
+                                            boxWidth: 20
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.raw || 0;
+                                                return `${label}: ${value} sessions`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="action-buttons">
+                <button className="action-btn" onClick={() => navigate("/calendar")}>View Calendar</button>
+                <button className="action-btn" onClick={() => setScreen("duo")}>
+                    Switch to Duo Session
+                </button>
+            </div>
+
+            <div className="filters">
+                <div className="filter-group">
+                    <label>Department:</label>
+                    <select
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                    >
+                        <option value="">Select department</option>
+                        {Object.keys(departmentsAndMajors).map(dept => (
+                            <option key={dept} value={dept}>
+                                {dept}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <button 
+                    className="action-btn" 
+                    onClick={() => setShowFiltered(!showFiltered)}
+                >
+                    {showFiltered ? 'Show All Sessions' : 'View Open Sessions'}
+                </button>
+            </div>
+
+            <div className="session-section">
+                <h2>Available Group Sessions</h2>
+                <div className="session-cards">
+                    {filteredSessions.map((session) => {
+                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+                        const participantCount = session.participants?.length || 0;
+                        return (
+                            <div key={session.id} className="session-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <img
+                                            src={session.photoURL || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
+                                            alt={session.displayName}
+                                            className="profile-img"
+                                        />
+                                        <h3 style={{ margin: 0 }}>{session.displayName}</h3>
+                                    </div>
+                                    <div
+                                        className="capacity-indicator"
+                                        onClick={(e) => handleCapacityClick(session, e)}
+                                        style={{
+                                            backgroundColor: (() => {
+                                                const fillPercentage = (participantCount / session.capacity) * 100;
+                                                if (fillPercentage >= 75) return '#ff6b6b';  // Red
+                                                if (fillPercentage >= 50) return '#ffd93d';  // Yellow
+                                                return '#4BC0C0';  // Green
+                                            })(),
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            textShadow: '0px 1px 2px rgba(0,0,0,0.2)'
+                                        }}
+                                    >
+                                        {participantCount}/{session.capacity}
+                                    </div>
+                                </div>
+                                <p>Course: {session.course}</p>
+                                <p>Major: {session.major}</p>
+                                <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
+                                <p>Place: {session.location}</p>
+                                <div className="session-actions">
+                                    {user.uid === session.userId ? (
+                                        <button
+                                            className="disband-btn"
+                                            onClick={() => {
+                                                if (window.confirm('Are you sure you want to disband this session? This action cannot be undone.')) {
+                                                    handleDisbandSession(session.id);
+                                                }
+                                            }}
+                                        >
+                                            Disband Session
+                                        </button>
+                                    ) : isParticipant ? (
+                                        <button
+                                            className="leave-btn"
+                                            onClick={() => {
+                                                if (window.confirm('Are you sure you want to leave this session?')) {
+                                                    handleLeaveSession(session.id);
+                                                }
+                                            }}
+                                        >
+                                            Leave Session
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className={`join-btn ${participantCount >= session.capacity ? 'full' : ''}`}
+                                            onClick={() => !session.full && handleJoinSession(session.id)}
+                                            disabled={participantCount >= session.capacity}
+                                        >
+                                            {participantCount >= session.capacity ? 'Session Full' : 'Join Session'}
+                                        </button>
+                                    )}
+                                </div>
+                                {selectedSession?.id === session.id && (
+                                    <div className={`participants-menu ${selectedSession ? 'open' : ''}`}>
+                                        <h3>Session Participants</h3>
+                                        <div className="participants-grid">
+                                            {session.participants?.map(participant => (
+                                                <div key={participant.uid} className="participant-item">
+                                                    <img
+                                                        src={participant.photoURL || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
+                                                        alt={participant.displayName}
+                                                        className="participant-img"
+                                                    />
+                                                    <span className="participant-name">{participant.displayName}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             <button className="back-button" onClick={() => setScreen("home")}>
                 Back to Home
             </button>
-        </section>
+        </div>
     );
 }
 
