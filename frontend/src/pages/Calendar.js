@@ -147,6 +147,31 @@ const Calendar = () => {
     }
   };
 
+  const deleteEvent = async (dateKey, timeValue) => {
+    if (!user) return;
+    
+    try {
+      const newEvents = { ...events };
+      if (newEvents[dateKey] && newEvents[dateKey][timeValue]) {
+        delete newEvents[dateKey][timeValue];
+        
+        // Clean up empty dates
+        if (Object.keys(newEvents[dateKey]).length === 0) {
+          delete newEvents[dateKey];
+        }
+  
+        // Update Firebase
+        const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+        await setDoc(eventsRef, { events: newEvents }, { merge: true });
+        
+        // Update local state
+        setEvents(newEvents);
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
   const renderTimeline = () => {
     if (!selectedDay) return null;
     
@@ -177,12 +202,21 @@ const Calendar = () => {
           key={event.id}
           className="time-event"
           style={{
-            top: `${topPosition}px`, // Use pixel-based positioning
+            top: `${topPosition}px`,
             backgroundColor: event.color
           }}
         >
           <span className="event-time">{event.displayTime}</span>
-          {event.title}
+          <span className="event-title">{event.title}</span>
+          <button 
+            className="delete-event-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteEvent(dateKey, time);
+            }}
+          >
+            ×
+          </button>
         </div>
       );
     });
