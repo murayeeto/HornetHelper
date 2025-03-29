@@ -5,15 +5,26 @@ import axios from 'axios';
 import firebase from '../firebase';
 import './ChatWindow.css';
 
+/**
+ * ChatWindow Component
+ * Provides real-time chat functionality with AI integration for both duo and group study sessions.
+ *
+ * @param {string} sessionId - Unique identifier for the chat session
+ * @param {boolean} isOpen - Controls chat window visibility
+ * @param {function} onClose - Handler for closing the chat window
+ * @param {boolean} isHornet - Indicates if user has AI assistant privileges
+ */
 const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
-    const [messages, setMessages] = useState([]);
-    const [newMessage, setNewMessage] = useState('');
-    const [showAiButtons, setShowAiButtons] = useState(false);
-    const [charCount, setCharCount] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const messagesContainerRef = useRef(null);
-    const MAX_CHARS = 400;
+    // State management for chat functionality
+    const [messages, setMessages] = useState([]); // Chat message history
+    const [newMessage, setNewMessage] = useState(''); // Current message input
+    const [showAiButtons, setShowAiButtons] = useState(false); // AI feature visibility toggle
+    const [charCount, setCharCount] = useState(0); // Message length counter
+    const [loading, setLoading] = useState(false); // Loading state for AI operations
+    const messagesContainerRef = useRef(null); // Reference for auto-scrolling
+    const MAX_CHARS = 400; // Maximum characters per message
     
+    // Set up real-time listener for chat messages
     useEffect(() => {
         if (!sessionId) return;
 
@@ -21,17 +32,17 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
 
         const setupMessagesListener = async () => {
             try {
-                // First try groupSessions
+                // Smart collection detection: tries group sessions first, then falls back to duo sessions
                 let collectionPath = 'groupSessions';
                 let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
                 let sessionDoc = await getDoc(sessionDocRef);
 
-                // If not found, try regular sessions
                 if (!sessionDoc.exists()) {
                     collectionPath = 'sessions';
                     sessionDocRef = doc(firebase.db, collectionPath, sessionId);
                 }
 
+                // Set up real-time updates for messages
                 const messagesRef = collection(sessionDocRef, 'messages');
                 const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
@@ -48,9 +59,11 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
         };
 
         setupMessagesListener();
+        // Clean up listener on unmount or session change
         return () => unsubscribe();
     }, [sessionId]);
 
+    // Auto-scroll chat to bottom when new messages arrive
     useEffect(() => {
         if (messagesContainerRef.current) {
             const scrollHeight = messagesContainerRef.current.scrollHeight;
@@ -92,6 +105,10 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
         }
     };
 
+    /**
+     * Handles video recommendations for the current course
+     * Fetches course-specific educational videos and displays them as clickable links
+     */
     const handleAiRecommend = async () => {
         setLoading(true);
         try {
@@ -99,12 +116,11 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                 throw new Error('No session ID provided');
             }
 
-            // First try to find the session in groupSessions
+            // Smart session detection for both group and duo sessions
             let collectionPath = 'groupSessions';
             let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
             let sessionDoc = await getDoc(sessionDocRef);
 
-            // If not found in groupSessions, try regular sessions
             if (!sessionDoc.exists()) {
                 collectionPath = 'sessions';
                 sessionDocRef = doc(firebase.db, collectionPath, sessionId);
@@ -128,17 +144,16 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
             console.log("Session data:", sessionData);
             console.log("Course from session:", sessionData?.course);
 
-            // Check if we have course data
             if (!sessionData?.course) {
                 throw new Error(`Session found but no course information available. Session ID: ${sessionId}`);
             }
 
-            // Get video recommendations from backend
+            // Fetch video recommendations from AI service
             const response = await axios.post('http://localhost:8888/api/recommend-video', {
-                major: sessionData.course // Using course for recommendations
+                major: sessionData.course
             });
 
-            // Format video recommendations
+            // Format videos with clickable links and visual organization
             const videos = response.data;
             const recommendationText = videos.map(video => (
                 `<div style="margin-bottom: 20px;">
@@ -148,6 +163,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                 </div>`
             )).join('\n');
             
+            // Add formatted recommendations to chat
             await addDoc(messagesRef, {
                 text: `<div>
                     <h3>Here are some recommended videos for ${sessionData.course}:</h3>
@@ -187,15 +203,18 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
         }
     };
 
+    /**
+     * Handles AI-powered Q&A interactions
+     * Sends user's question to AI service and displays the response in chat
+     */
     const handleAiAsk = async () => {
         setLoading(true);
         try {
-            // First try groupSessions
+            // Smart session detection for both group and duo sessions
             let collectionPath = 'groupSessions';
             let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
             let sessionDoc = await getDoc(sessionDocRef);
 
-            // If not found, try regular sessions
             if (!sessionDoc.exists()) {
                 collectionPath = 'sessions';
                 sessionDocRef = doc(firebase.db, collectionPath, sessionId);
@@ -203,17 +222,16 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
 
             const messagesRef = collection(sessionDocRef, 'messages');
             
-            // Only proceed if there's a message
             if (!newMessage.trim()) {
                 return;
             }
 
-            // Get AI response from backend
+            // Get AI response for user's question
             const response = await axios.post('http://localhost:8888/api/ask-ai', {
                 message: newMessage.trim()
             });
             
-            // Add user's question to chat
+            // Add user's question to chat history
             await addDoc(messagesRef, {
                 text: newMessage.trim(),
                 userId: firebase.auth.currentUser.uid,
@@ -222,7 +240,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                 isAiMessage: false
             });
 
-            // Add AI's response to chat
+            // Add AI's response to chat history
             await addDoc(messagesRef, {
                 text: response.data.response,
                 userId: "ai",
@@ -232,7 +250,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                 visibleToHornet: true
             });
             
-            // Clear the input after sending
+            // Reset input state
             setNewMessage('');
             setCharCount(0);
             setShowAiButtons(false);
@@ -265,13 +283,15 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
 
     return (
         <div className="chat-window">
+            {/* Chat Header with AI Assistant Toggle */}
             <div className="chat-header">
                 <h3>The Hive</h3>
                 <div className="header-controls">
+                    {/* AI Assistant button only shown to users with Hornet privileges */}
                     {isHornet && (
-                        <FaRobot 
+                        <FaRobot
                             className="robot-icon"
-                            style={{ 
+                            style={{
                                 fontSize: '20px',
                                 marginRight: '10px',
                                 color: 'white'
@@ -282,17 +302,21 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                     <button onClick={onClose} className="close-button">&times;</button>
                 </div>
             </div>
+
+            {/* Messages Display with Auto-scroll */}
             <div className="messages-container" ref={messagesContainerRef}>
                 {messages.map((message) => (
+                    // Hide AI messages from non-Hornet users
                     (message.isAiMessage && !isHornet) ? null : (
-                        <div 
-                            key={message.id} 
+                        <div
+                            key={message.id}
                             className={`chat-message ${message.userId === firebase.auth.currentUser?.uid ? 'user' : 'ai'}`}
                         >
                             <div className="message-content">
                                 <span className="message-sender">
                                     {message.userId === firebase.auth.currentUser?.uid ? 'You' : message.displayName}
                                 </span>
+                                {/* Support for both HTML and plain text messages */}
                                 {message.isHtml ? (
                                     <p dangerouslySetInnerHTML={{ __html: message.text }} />
                                 ) : (
@@ -302,6 +326,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                         </div>
                     )
                 ))}
+                {/* Loading indicator for AI operations */}
                 {loading && (
                     <div className="chat-message ai">
                         <div className="message-content">
@@ -311,18 +336,21 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                     </div>
                 )}
             </div>
+
+            {/* Message Input and AI Controls */}
             <div className="message-form-container">
+                {/* AI Feature Buttons */}
                 {showAiButtons && isHornet && (
                     <div className="ai-buttons">
-                        <button 
-                            onClick={handleAiRecommend} 
+                        <button
+                            onClick={handleAiRecommend}
                             className="ai-button recommend"
                             disabled={loading}
                         >
                             Recommend
                         </button>
-                        <button 
-                            onClick={handleAiAsk} 
+                        <button
+                            onClick={handleAiAsk}
                             className="ai-button ask"
                             disabled={loading}
                         >

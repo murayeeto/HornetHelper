@@ -1,6 +1,32 @@
 # Hornet Helper
 
-A full-stack web application with a React frontend, Flask backend, and Firebase authentication. The application features a responsive design with categories including Calendar and AI Solutions. The color scheme is blue, red, and white, and it uses HashRouter for page navigation.
+A full-stack educational platform that combines real-time chat, AI-powered tutoring, and personalized video recommendations. Built with React, Flask, and Firebase, it provides an interactive learning environment where students can collaborate in study sessions and get AI assistance for their courses.
+
+## Key Features
+
+- **AI-Powered Learning Assistant**
+  - Real-time chat with AI tutor
+  - Course-specific video recommendations
+  - Educational guidance without direct answers
+  - Support for both group and duo study sessions
+
+- **Interactive Study Sessions**
+  - Create and join study groups
+  - Real-time chat functionality
+  - Course-specific discussions
+  - Support for both one-on-one and group sessions
+
+- **Smart Video Recommendations**
+  - Course-specific educational videos
+  - Clickable links to YouTube content
+  - Curated for educational relevance
+  - Safe and embeddable content only
+
+- **User Experience**
+  - Responsive design for all devices
+  - Google Sign-In authentication
+  - Protected routes
+  - Calendar integration
 
 ## Project Structure
 
@@ -72,9 +98,10 @@ hornet-helper/
    # In frontend directory
    cp .env.example .env
    ```
-   Update .env with your Firebase configuration:
+   Update .env with your configurations:
    ```
-   REACT_APP_API_URL=http://localhost:8000
+   # Frontend Configuration
+   REACT_APP_API_URL=http://localhost:8888  # Backend server URL
    REACT_APP_FIREBASE_API_KEY=your_api_key
    REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
    REACT_APP_FIREBASE_PROJECT_ID=your_project_id
@@ -82,7 +109,14 @@ hornet-helper/
    REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
    REACT_APP_FIREBASE_APP_ID=your_app_id
    REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
-   PORT=4000
+   PORT=4000  # Frontend development server port
+   ```
+
+   Create a .env file in the backend directory:
+   ```
+   # Backend Configuration
+   OPENAI_API_KEY=your_openai_api_key  # Get from https://platform.openai.com
+   YOUTUBE_API_KEY=your_youtube_api_key # Get from Google Cloud Console
    ```
 
 3. Set up the backend:
@@ -102,32 +136,52 @@ hornet-helper/
 ### Running the Application
 
 1. Start the backend server:
-   ```
-   cd backend
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   python app.py
-   ```
-   The backend will run on http://localhost:8000
+    ```bash
+    cd backend
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    python app.py
+    ```
+    The backend will run on http://localhost:8888 with:
+    - AI-powered Q&A endpoint for educational assistance
+    - YouTube video recommendation system
+    - CORS configured for secure frontend communication
 
 2. In a new terminal, start the frontend development server:
-   ```
-   cd frontend
-   npm start
-   ```
-   The frontend will run on http://localhost:4000
+    ```bash
+    cd frontend
+    npm start
+    ```
+    The frontend will run on http://localhost:4000 with:
+    - Real-time chat with AI integration
+    - Course-specific video recommendations
+    - Support for both group and duo study sessions
+    - Automatic message formatting with clickable links
 
 ## Features
 
+### Core Features
 - User authentication with Google Sign-In
 - Protected routes requiring authentication
 - User profiles with major selection dropdown
-- White text on blue backgrounds for better readability
-- Calendar functionality
-- AI solutions category
-- Responsive design that works on desktop and mobile
+- Calendar functionality for study session planning
+- Responsive design for desktop and mobile
 - Navigation with HashRouter
-- Flask backend with API endpoints
-- React frontend with Axios for API calls
+
+### AI Integration
+- Real-time chat with AI teaching assistant
+- Course-specific video recommendations
+- Educational guidance without direct answers
+- Smart video search with YouTube integration
+- HTML-formatted responses with clickable links
+- Support for both group and duo study sessions
+
+### Technical Features
+- Flask backend with AI-powered endpoints
+- React frontend with real-time updates
+- Firebase Firestore for message storage
+- CORS-secured API communication
+- OpenAI GPT-3.5 integration
+- YouTube Data API integration
 
 ## Technologies Used
 

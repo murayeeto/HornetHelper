@@ -1,22 +1,41 @@
+"""
+AI Utilities Module
+Provides integration with OpenAI for Q&A and YouTube for educational video recommendations.
+Requires API keys to be set in .env file:
+- OPENAI_API_KEY: For ChatGPT integration
+- YOUTUBE_API_KEY: For video search functionality
+"""
+
 import os
 import openai
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
-# Initialize OpenAI
+# Initialize OpenAI with API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
 if not openai.api_key:
     print("Warning: OPENAI_API_KEY not found in environment variables")
 
-# Initialize YouTube API client
+# Set up YouTube API client for video recommendations
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 def get_ai_response(prompt):
     """
-    Get a response from OpenAI
+    Generate an AI response using OpenAI's ChatGPT
+    
+    Args:
+        prompt (str): User's question or message
+        
+    Returns:
+        str: AI-generated response focused on educational guidance
+        
+    Note:
+        Uses GPT-3.5-turbo with specific instructions to act as a supportive teacher,
+        providing guidance rather than direct answers to encourage learning.
     """
     try:
         if not openai.api_key:
@@ -43,26 +62,44 @@ def get_ai_response(prompt):
 
 def get_video_recommendation(major):
     """
-    Get a video recommendation from YouTube based on the user's major
+    Search YouTube for educational videos related to a specific course or major
+    
+    Args:
+        major (str): Course name or major to search for
+        
+    Returns:
+        list: List of dictionaries containing video information:
+            - title: Video title
+            - url: YouTube watch URL
+            - thumbnail: High-quality thumbnail URL
+            - description: Truncated video description
+            
+    Note:
+        - Searches for course-specific educational content
+        - Returns up to 3 most relevant results
+        - Ensures videos are embeddable and safe for educational use
+        - Truncates descriptions to 100 characters for readability
     """
     try:
-        # Search for educational videos related to the course
-        # Clean up the course name and add relevant educational terms
+        # Construct an education-focused search query
         search_query = f"{major} course lecture tutorial concepts"
+        
+        # Configure YouTube search parameters
         request = youtube.search().list(
             part="snippet",
             q=search_query,
-            type="video",
-            videoEmbeddable="true",
-            maxResults=3,
-            relevanceLanguage="en",
-            safeSearch="strict"
+            type="video",          # Only return videos (not playlists/channels)
+            videoEmbeddable="true", # Ensure videos can be embedded
+            maxResults=3,          # Limit to top 3 results
+            relevanceLanguage="en", # English content only
+            safeSearch="strict"    # Ensure content is appropriate
         )
         response = request.execute()
 
         if not response.get('items'):
             return None
 
+        # Process and format video results
         videos = []
         for video in response['items']:
             video_id = video['id']['videoId']
@@ -70,6 +107,7 @@ def get_video_recommendation(major):
             video_url = f"https://www.youtube.com/watch?v={video_id}"
             thumbnail_url = video['snippet']['thumbnails']['high']['url']
             
+            # Format video data for frontend display
             videos.append({
                 "title": video_title,
                 "url": video_url,

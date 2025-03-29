@@ -8,10 +8,10 @@ const Pricing = () => {
   const { upgradeToHornet } = useAuth();
   
   const handleUpgrade = async () => {
-    if (window.confirm('Would you like to upgrade to Pro status?')) {
+    if (window.confirm('Would you like to upgrade to Hornet Pro status?')) {
       try {
         await upgradeToHornet();
-        setMessage('Successfully upgraded to Pro!');
+        setMessage('Successfully upgraded to Hornet Pro!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
         setMessage(error.message || 'Failed to upgrade. Please try again.');
@@ -39,7 +39,7 @@ const Pricing = () => {
       cta: 'Get Started'
     },
     {
-      name: 'Pro',
+      name: 'Hornet Pro',
       color: 'red',
       price: billingCycle === 'monthly' ? '$4.99/month' : '$49.99/year',
       features: [
@@ -51,7 +51,7 @@ const Pricing = () => {
       cta: 'Upgrade Now'
     },
     {
-      name: 'Pro Max',
+      name: 'Hornet Pro Max',
       color: 'gold',
       price: billingCycle === 'monthly' ? '$9.99/month' : '$89.99/year',
       features: [
