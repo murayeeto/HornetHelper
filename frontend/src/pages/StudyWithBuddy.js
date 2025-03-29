@@ -12,7 +12,8 @@ import {
     setDoc,
     deleteDoc,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    getDoc
 } from 'firebase/firestore';
 import firebase from '../firebase';
 
@@ -82,6 +83,9 @@ function DuoSessions({ setScreen }) {
             const sessionRef = doc(firebase.db, 'sessions', sessionId);
             const session = sessions.find(s => s.id === sessionId);
             
+            // Remove from calendar
+            await removeFromCalendar(session);
+            
             await setDoc(sessionRef, {
                 participants: arrayRemove({
                     uid: user.uid,
@@ -109,9 +113,47 @@ function DuoSessions({ setScreen }) {
         }
     };
 
+    const removeFromCalendar = async (sessionData) => {
+        try {
+            const date = new Date(sessionData.dateTime);
+            const dateKey = date.toISOString().split('T')[0];
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const timeValue = hours + (minutes / 60);
+
+            // Get current calendar events
+            const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+            const eventsSnap = await getDoc(eventsRef);
+            
+            if (eventsSnap.exists()) {
+                const currentEvents = eventsSnap.data().events || {};
+                
+                if (currentEvents[dateKey] && currentEvents[dateKey][timeValue]) {
+                    delete currentEvents[dateKey][timeValue];
+                    
+                    // Clean up empty dates
+                    if (Object.keys(currentEvents[dateKey]).length === 0) {
+                        delete currentEvents[dateKey];
+                    }
+                    
+                    // Update Firebase
+                    await setDoc(eventsRef, { events: currentEvents });
+                }
+            }
+        } catch (error) {
+            console.error("Error removing from calendar:", error);
+        }
+    };
+
     const handleDisbandSession = async (sessionId) => {
         try {
+            const session = sessions.find(s => s.id === sessionId);
             const sessionRef = doc(firebase.db, 'sessions', sessionId);
+            
+            // Remove from calendar
+            await removeFromCalendar(session);
+            
+            // Delete session
             await deleteDoc(sessionRef);
 
             // Update local state
@@ -120,6 +162,42 @@ function DuoSessions({ setScreen }) {
             );
         } catch (error) {
             console.error("Error disbanding session:", error);
+        }
+    };
+
+    const addToCalendar = async (sessionData) => {
+        try {
+            const date = new Date(sessionData.dateTime);
+            const dateKey = date.toISOString().split('T')[0];
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            const timeValue = hours + (minutes / 60);
+
+            // Get current calendar events
+            const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+            const eventsSnap = await getDoc(eventsRef);
+            const currentEvents = eventsSnap.exists() ? eventsSnap.data().events || {} : {};
+
+            // Create new event
+            const newEvents = {
+                ...currentEvents,
+                [dateKey]: {
+                    ...(currentEvents[dateKey] || {}),
+                    [timeValue]: {
+                        id: Date.now(),
+                        title: `Study Session: ${sessionData.subject}`,
+                        color: '#00A7E3',
+                        displayTime: `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
+                    }
+                }
+            };
+
+            // Update Firebase
+            await setDoc(eventsRef, { events: newEvents }, { merge: true });
+        } catch (error) {
+            console.error("Error adding to calendar:", error);
         }
     };
 
@@ -147,6 +225,9 @@ function DuoSessions({ setScreen }) {
                 full: isFull,
                 updatedAt: serverTimestamp()
             }, { merge: true });
+
+            // Add to calendar
+            await addToCalendar(session);
 
             // Update local state
             setSessions(prevSessions =>
@@ -189,6 +270,9 @@ function DuoSessions({ setScreen }) {
             };
 
             const docRef = await addDoc(collection(firebase.db, 'sessions'), sessionData);
+            
+            // Add to calendar
+            await addToCalendar(sessionData);
             
             // Add the new session to the state
             setSessions(prevSessions => [{

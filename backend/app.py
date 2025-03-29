@@ -50,10 +50,6 @@ data = {
         "title": "Category 2",
         "items": ["Item A", "Item B", "Item C"]
     },
-    "category3": {
-        "title": "Category 3",
-        "items": ["Product X", "Product Y", "Product Z"]
-    },
     "calendar": {
         "title": "Calendar",
         "items": ["View Events", "Add Event", "Manage Schedule"]
@@ -101,7 +97,6 @@ def get_categories():
     categories = [
         {"id": "studywithbuddy", "name": "Study With Buddy"},
         {"id": "category2", "name": "Category 2"},
-        {"id": "category3", "name": "Category 3"},
         {"id": "calendar", "name": "Calendar"},
         {"id": "ai", "name": "AI Solutions"}
     ]
