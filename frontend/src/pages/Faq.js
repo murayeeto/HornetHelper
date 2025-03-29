@@ -123,7 +123,7 @@ const Faq = () => {
     
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/api/ask-ai', {
+      const response = await axios.post('http://localhost:8888/api/ask-ai', {
         message: userMessage
       });
       setChatMessages(prev => [...prev, { type: 'ai', text: response.data.response }]);
@@ -145,7 +145,7 @@ const Faq = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/api/recommend-video', {
+      const response = await axios.post('http://localhost:8888/api/recommend-video', {
         major: user ? user.major : selectedMajor
       });
       console.log('Video response:', response.data);
