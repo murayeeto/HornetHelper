@@ -15,6 +15,7 @@ import Calendar from './pages/Calendar';
 import AI from './pages/AI';
 import Account from './pages/Account';
 import StudyWithBuddy from './pages/StudyWithBuddy';
+import Pricing from './pages/Pricing'
 
 
 // Auth Context
@@ -46,10 +47,10 @@ function App() {
                 }
               />
               <Route
-                path="/category2"
+                path="/ai"
                 element={
                   <PrivateRoute>
-                    <Category2 />
+                    <AI />
                   </PrivateRoute>
                 }
               />
@@ -62,10 +63,10 @@ function App() {
                 }
               />
               <Route
-                path="/ai"
+                path="/pricing"
                 element={
                   <PrivateRoute>
-                    <AI />
+                    <Pricing />
                   </PrivateRoute>
                 }
               />
