@@ -11,7 +11,6 @@ import Footer from './components/Footer';
 // Pages
 import Home from './pages/Home';
 import Category2 from './pages/Category2';
-import Category3 from './pages/Category3';
 import Calendar from './pages/Calendar';
 import AI from './pages/AI';
 import Account from './pages/Account';
@@ -51,14 +50,6 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Category2 />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/category3"
-                element={
-                  <PrivateRoute>
-                    <Category3 />
                   </PrivateRoute>
                 }
               />
