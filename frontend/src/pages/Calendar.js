@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Calendar.css';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import firebase from '../firebase';
 
 const Calendar = () => {
@@ -151,21 +151,28 @@ const Calendar = () => {
     if (!user) return;
     
     try {
-      const newEvents = { ...events };
-      if (newEvents[dateKey] && newEvents[dateKey][timeValue]) {
-        delete newEvents[dateKey][timeValue];
+      // Get current events from Firebase
+      const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
+      const eventsSnap = await getDoc(eventsRef);
+      
+      if (eventsSnap.exists()) {
+        const currentEvents = eventsSnap.data().events || {};
         
-        // Clean up empty dates
-        if (Object.keys(newEvents[dateKey]).length === 0) {
-          delete newEvents[dateKey];
+        // Delete the specific event
+        if (currentEvents[dateKey] && currentEvents[dateKey][timeValue]) {
+          delete currentEvents[dateKey][timeValue];
+          
+          // Clean up empty dates
+          if (Object.keys(currentEvents[dateKey]).length === 0) {
+            delete currentEvents[dateKey];
+          }
+          
+          // Update Firebase with the new events object
+          await setDoc(eventsRef, { events: currentEvents });
+          
+          // Update local state
+          setEvents(currentEvents);
         }
-  
-        // Update Firebase
-        const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
-        await setDoc(eventsRef, { events: newEvents }, { merge: true });
-        
-        // Update local state
-        setEvents(newEvents);
       }
     } catch (error) {
       console.error("Error deleting event:", error);
