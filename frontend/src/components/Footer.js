@@ -7,9 +7,10 @@ const Footer = () => {
       <div className="footer-content">
         <div className="footer-links">
           <Link to="/">Home</Link>
-          <Link to="/category1">Category 1</Link>
-          <Link to="/category2">Category 2</Link>
+          <Link to="/studywithbuddy">Study With Buddy</Link>
+          <Link to="/ai">AI Solutions</Link>
           <Link to="/calendar">Calendar</Link>
+          <Link to="/pricing">Pricing</Link>
         </div>
         <div className="footer-copyright">
             {new Date().getFullYear()} Hornet Helper.
