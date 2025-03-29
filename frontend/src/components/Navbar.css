@@ -309,16 +309,17 @@
 }
 
 .logo-image {
-  height: 8rem; /* Increased from 2.5rem (adjust this number as needed) */
+  height: 8rem; 
+  min-height: 8rem !important;
   width: auto;
   object-fit: contain;
+  margin-right: -5px;
 }
 
 
 
 .logo-text {
   font-size: 1.5rem; /* Slightly larger to match bigger logo */
-  /* Keep all other properties the same */
   width: 1rem;
 }
 
