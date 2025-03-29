@@ -140,12 +140,20 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
 
             // Format video recommendations
             const videos = response.data;
-            const recommendationText = videos.map(video => 
-                `${video.title}\n${video.url}\n${video.description}\n`
-            ).join('\n');
+            const recommendationText = videos.map(video => (
+                `<div style="margin-bottom: 20px;">
+                    <strong>📺 ${video.title}</strong><br/>
+                    <a href="${video.url}" target="_blank" rel="noopener noreferrer">🔗 Watch Video</a><br/>
+                    <span>📝 ${video.description}</span>
+                </div>`
+            )).join('\n');
             
             await addDoc(messagesRef, {
-                text: `Here are some recommended videos for ${sessionData.course}:\n\n${recommendationText}`,
+                text: `<div>
+                    <h3>Here are some recommended videos for ${sessionData.course}:</h3>
+                    ${recommendationText}
+                </div>`,
+                isHtml: true,
                 userId: "ai",
                 displayName: "AI Assistant",
                 timestamp: serverTimestamp(),
@@ -285,7 +293,11 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                                 <span className="message-sender">
                                     {message.userId === firebase.auth.currentUser?.uid ? 'You' : message.displayName}
                                 </span>
-                                <p>{message.text}</p>
+                                {message.isHtml ? (
+                                    <p dangerouslySetInnerHTML={{ __html: message.text }} />
+                                ) : (
+                                    <p>{message.text}</p>
+                                )}
                             </div>
                         </div>
                     )
