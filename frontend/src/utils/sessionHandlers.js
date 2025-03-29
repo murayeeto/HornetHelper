@@ -1,4 +1,4 @@
-import { doc, setDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import firebase from '../firebase';
 
 export const useSessionHandlers = (user, sessions, setSessions, collectionName, onSessionUpdate) => {

@@ -487,14 +487,7 @@ function DuoSessions({ setScreen }) {
                                     </div>
                                 </div>
                                 <div className="session-actions">
-                                    {session.full ? (
-                                        <button
-                                            className="join-btn full"
-                                            disabled={true}
-                                        >
-                                            Session Full
-                                        </button>
-                                    ) : !user ? (
+                                    {!user ? (
                                         <button
                                             className="join-btn"
                                             onClick={() => alert('Please login to join sessions')}
@@ -1014,14 +1007,7 @@ function GroupSessions({ setScreen }) {
                                 <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
                                 <p>Place: {session.location}</p>
                                 <div className="session-actions">
-                                    {participantCount >= session.capacity ? (
-                                        <button
-                                            className="join-btn full"
-                                            disabled={true}
-                                        >
-                                            Session Full
-                                        </button>
-                                    ) : !user ? (
+                                    {!user ? (
                                         <button
                                             className="join-btn"
                                             onClick={() => alert('Please login to join sessions')}
