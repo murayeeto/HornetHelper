@@ -215,7 +215,7 @@ function DuoSessions({ setScreen }) {
                 <div className="stats-section">
                     <h2>Number of active sessions: {sessions.filter(s => s.active).length}</h2>
                     <h3>Sessions by Department:</h3>
-                    <div style={{ width: '300px', height: '300px', margin: '0 auto' }}>
+                    <div style={{ width: '600px', height: '400px', margin: '0 auto' }}>
                         <Pie
                             data={{
                                 labels: Object.keys(departmentsAndMajors),
@@ -252,10 +252,23 @@ function DuoSessions({ setScreen }) {
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 plugins: {
+                                    layout: {
+                                        padding: {
+                                            right: 100
+                                        }
+                                    },
                                     legend: {
                                         position: 'right',
+                                        align: 'start',
                                         labels: {
-                                            boxWidth: 20
+                                            boxWidth: 10,
+                                            padding: 15,
+                                            font: {
+                                                size: 11
+                                            },
+                                            textAlign: 'left',
+                                            wrap: true,
+                                            maxWidth: 250
                                         }
                                     },
                                     tooltip: {
@@ -631,7 +644,7 @@ function GroupSessions({ setScreen }) {
                 <div className="stats-section">
                     <h2>Number of active sessions: {sessions.filter(s => s.active).length}</h2>
                     <h3>Sessions by Department:</h3>
-                    <div style={{ width: '300px', height: '300px', margin: '0 auto' }}>
+                    <div style={{ width: '600px', height: '400px', margin: '0 auto' }}>
                         <Pie
                             data={{
                                 labels: Object.keys(departmentsAndMajors),
@@ -668,10 +681,23 @@ function GroupSessions({ setScreen }) {
                                 responsive: true,
                                 maintainAspectRatio: false,
                                 plugins: {
+                                    layout: {
+                                        padding: {
+                                            right: 100
+                                        }
+                                    },
                                     legend: {
                                         position: 'right',
+                                        align: 'start',
                                         labels: {
-                                            boxWidth: 20
+                                            boxWidth: 10,
+                                            padding: 15,
+                                            font: {
+                                                size: 11
+                                            },
+                                            textAlign: 'left',
+                                            wrap: true,
+                                            maxWidth: 250
                                         }
                                     },
                                     tooltip: {
