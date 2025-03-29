@@ -1,79 +1,88 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import departmentsAndMajors from '../data/departmentsAndMajors';
 import './Faq.css';
 
+// Flatten majors list
+const allMajors = Object.values(departmentsAndMajors).flat().sort();
+
+// Static FAQ data
+const faqData = {
+  title: "Frequently Asked Questions",
+  categories: [
+    {
+      title: "AI Features",
+      items: [
+        {
+          question: "What AI features are available?",
+          answer: "We offer two powerful AI features: 1) An intelligent tutoring system powered by a neural chat model that can help with your studies, and 2) A smart YouTube video recommendation system that suggests educational content based on your major."
+        },
+        {
+          question: "How accurate are the AI recommendations?",
+          answer: "Our AI system uses state-of-the-art models including the IBL Tutoring Neural Chat model for personalized assistance and integrates with YouTube's API to find highly relevant educational content for your field of study."
+        }
+      ]
+    },
+    {
+      title: "General Questions",
+      items: [
+        {
+          question: "What is this service?",
+          answer: "Our platform helps students find study groups and provides AI-powered resource recommendations for premium users."
+        },
+        {
+          question: "Is there a free version?",
+          answer: "Yes, you can join and create study groups for free. AI resource recommendations require a premium subscription."
+        }
+      ]
+    },
+    {
+      title: "Study Groups",
+      items: [
+        {
+          question: "How do I find study groups?",
+          answer: "You can browse available groups by department and gender. Use our search filters to find the perfect match."
+        },
+        {
+          question: "Can I create my own study group?",
+          answer: "Absolutely! Free users can create up to 3 study groups. Premium users can create unlimited groups."
+        },
+        {
+          question: "What sizes do study groups come in?",
+          answer: "Groups range from small (2 people) to large (3-10 people). You can choose based on your preference."
+        }
+      ]
+    },
+    {
+      title: "Premium Features",
+      items: [
+        {
+          question: "What does premium offer?",
+          answer: "Premium includes AI-powered resource recommendations with unlimited group creation."
+        },
+        {
+          question: "How much does premium cost?",
+          answer: "We offer monthly ($9.99) and annual ($89.99) subscription options."
+        },
+        {
+          question: "How does the AI resource recommendation work?",
+          answer: "Our AI analyzes your major, interests, and study patterns to provide personalized learning resources and study materials."
+        }
+      ]
+    }
+  ]
+};
+
 const Faq = () => {
+  const { user } = useAuth();
   const [showAiDemo, setShowAiDemo] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [videoRecommendation, setVideoRecommendation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(null);
   const [userInput, setUserInput] = useState('');
-  const [faqData, setFaqData] = useState({
-    title: "Frequently Asked Questions",
-    categories: [
-      {
-        title: "AI Features",
-        items: [
-          {
-            question: "What AI features are available?",
-            answer: "We offer two powerful AI features: 1) An intelligent tutoring system powered by a neural chat model that can help with your studies, and 2) A smart YouTube video recommendation system that suggests educational content based on your major."
-          },
-          {
-            question: "How accurate are the AI recommendations?",
-            answer: "Our AI system uses state-of-the-art models including the IBL Tutoring Neural Chat model for personalized assistance and integrates with YouTube's API to find highly relevant educational content for your field of study."
-          }
-        ]
-      },
-      {
-        title: "General Questions",
-        items: [
-          {
-            question: "What is this service?",
-            answer: "Our platform helps students find study groups and provides AI-powered resource recommendations for premium users."
-          },
-          {
-            question: "Is there a free version?",
-            answer: "Yes, you can join and create study groups for free. AI resource recommendations require a premium subscription."
-          }
-        ]
-      },
-      {
-        title: "Study Groups",
-        items: [
-          {
-            question: "How do I find study groups?",
-            answer: "You can browse available groups by department and gender. Use our search filters to find the perfect match."
-          },
-          {
-            question: "Can I create my own study group?",
-            answer: "Absolutely! Free users can create up to 3 study groups. Premium users can create unlimited groups."
-          },
-          {
-            question: "What sizes do study groups come in?",
-            answer: "Groups range from small (2 people) to large (3-10 people). You can choose based on your preference."
-          }
-        ]
-      },
-      {
-        title: "Premium Features",
-        items: [
-          {
-            question: "What does premium offer?",
-            answer: "Premium includes AI-powered resource recommendations with unlimited group creation."
-          },
-          {
-            question: "How much does premium cost?",
-            answer: "We offer monthly ($9.99) and annual ($89.99) subscription options."
-          },
-          {
-            question: "How does the AI resource recommendation work?",
-            answer: "Our AI analyzes your major, interests, and study patterns to provide personalized learning resources and study materials."
-          }
-        ]
-      }
-    ]
-  });
+  const [selectedMajor, setSelectedMajor] = useState(user?.major || allMajors[0]);
 
   const chatContainerRef = useRef(null);
   const aiDemoRef = useRef(null);
@@ -103,6 +112,12 @@ const Faq = () => {
     fetchFaqData();
   }, []);
 
+  useEffect(() => {
+    if (user?.major) {
+      setSelectedMajor(user.major);
+    }
+  }, [user]);
+
   const toggleAnswer = (index) => {
     setActiveIndex(activeIndex === index ? null : index);
   };
@@ -131,12 +146,23 @@ const Faq = () => {
   };
 
   const handleGetVideoRecommendation = async () => {
+    if (user && !user.major) {
+      setVideoRecommendation('no-major');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await axios.post('http://localhost:8000/api/recommend-video', {
-        major: "Computer Science" // This should come from user's profile
+        major: user ? user.major : selectedMajor
       });
-      setVideoRecommendation(response.data);
+      console.log('Video response:', response.data);
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setVideoRecommendation(response.data);
+      } else {
+        console.error('No videos found in response:', response.data);
+        setVideoRecommendation(null);
+      }
     } catch (error) {
       console.error('Error getting video recommendation:', error);
       setVideoRecommendation(null);
@@ -210,6 +236,14 @@ const Faq = () => {
         {showAiDemo && (
           <div className={`ai-chat-demo ${loading ? 'loading' : ''}`}>
             <div className="chat-messages" ref={chatContainerRef}>
+              {chatMessages.length === 0 && !loading && (
+                <div className="chat-message ai">
+                  <div className="message-content">
+                    <span className="message-sender">AI Assistant:</span>
+                    <p>Hello! I'm your personal study assistant, ready to help you succeed in your studies. I can help with study techniques, difficult concepts, or time management. What would you like help with today?</p>
+                  </div>
+                </div>
+              )}
               {chatMessages.map((message, index) => (
                 <div key={index} className={`chat-message ${message.type}`}>
                   <div className="message-content">
@@ -258,13 +292,47 @@ const Faq = () => {
           </div>
         )}
 
-        {videoRecommendation && (
-          <div className="video-recommendation">
-            <h3>Recommended Video:</h3>
-            <p>{videoRecommendation.title}</p>
-            <a href={videoRecommendation.url} target="_blank" rel="noopener noreferrer">
-              Watch Video
-            </a>
+        {!user && (
+          <div className="major-selector">
+            <select 
+              value={selectedMajor}
+              onChange={(e) => setSelectedMajor(e.target.value)}
+              className="major-dropdown"
+            >
+              {allMajors.map((major) => (
+                <option key={major} value={major}>
+                  {major}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {videoRecommendation === 'no-major' ? (
+          <div className="video-recommendations">
+            <h3>Major Not Set</h3>
+            <p>Please set your major in your account settings to get personalized video recommendations.</p>
+          </div>
+        ) : videoRecommendation ? (
+          <div className="video-recommendations">
+            <h3>Recommended Videos for {user ? user.major : selectedMajor}:</h3>
+            <div className="video-grid">
+              {videoRecommendation.map((video, index) => (
+                <div key={index} className="video-card">
+                  <img src={video.thumbnail} alt={video.title} className="video-thumbnail" />
+                  <h4>{video.title}</h4>
+                  <p>{video.description}</p>
+                  <a href={video.url} target="_blank" rel="noopener noreferrer" className="watch-button">
+                    Watch Video
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : loading ? null : videoRecommendation === null && (
+          <div className="video-recommendations">
+            <h3>No Videos Found</h3>
+            <p>Sorry, we couldn't find any educational videos for your major at the moment. Please try again later.</p>
           </div>
         )}
       </div>

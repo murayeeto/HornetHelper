@@ -151,16 +151,17 @@
 }
 
 .name-input,
-.major-input {
+.major-dropdown {
   padding: 0.8rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
   width: 100%;
+  background: white;
 }
 
 .name-input:focus,
-.major-input:focus {
+.major-dropdown:focus {
   outline: none;
   border-color: #4285f4;
   box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);

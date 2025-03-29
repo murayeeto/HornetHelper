@@ -26,7 +26,7 @@ def get_ai_response(prompt):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful AI tutor assistant focused on helping students learn effectively."},
+                {"role": "system", "content": "You are a kind and supportive teacher who helps students succeed. Keep responses concise (3-4 sentences max). Be clear, encouraging, and practical. Use simple formatting - no markdown or special characters. Focus on giving actionable advice and clear explanations and also try not give the user the direct answer they are seeking rather seek to guide them to the correct answer."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=150,
@@ -51,7 +51,7 @@ def get_video_recommendation(major):
             q=search_query,
             type="video",
             videoEmbeddable="true",
-            maxResults=1,
+            maxResults=3,
             relevanceLanguage="en",
             safeSearch="strict"
         )
@@ -60,15 +60,21 @@ def get_video_recommendation(major):
         if not response.get('items'):
             return None
 
-        video = response['items'][0]
-        video_id = video['id']['videoId']
-        video_title = video['snippet']['title']
-        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        videos = []
+        for video in response['items']:
+            video_id = video['id']['videoId']
+            video_title = video['snippet']['title']
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            thumbnail_url = video['snippet']['thumbnails']['high']['url']
+            
+            videos.append({
+                "title": video_title,
+                "url": video_url,
+                "thumbnail": thumbnail_url,
+                "description": video['snippet']['description'][:100] + '...' if len(video['snippet']['description']) > 100 else video['snippet']['description']
+            })
 
-        return {
-            "title": video_title,
-            "url": video_url
-        }
+        return videos
     except Exception as e:
         print(f"Error getting video recommendation: {str(e)}")
         return None

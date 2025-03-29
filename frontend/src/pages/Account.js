@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import departmentsAndMajors from '../data/departmentsAndMajors';
 import './Account.css';
+
+// Flatten majors list
+const allMajors = Object.values(departmentsAndMajors).flat().sort();
 
 const DEFAULT_PROFILE_PIC = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
 
@@ -199,13 +203,18 @@ const Account = () => {
               <label>Major</label>
               {isEditingMajor ? (
                 <form onSubmit={handleMajorSubmit} className="edit-form">
-                  <input
-                    type="text"
+                  <select
                     value={major}
                     onChange={(e) => setMajor(e.target.value)}
-                    placeholder="Enter your major"
-                    className="major-input"
-                  />
+                    className="major-dropdown"
+                  >
+                    <option value="">Select your major</option>
+                    {allMajors.map((majorOption) => (
+                      <option key={majorOption} value={majorOption}>
+                        {majorOption}
+                      </option>
+                    ))}
+                  </select>
                   <div className="button-group">
                     <button type="submit" className="save-btn">
                       Save
