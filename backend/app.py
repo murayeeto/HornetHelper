@@ -96,7 +96,7 @@ def get_category(category_name):
 def get_categories():
     categories = [
         {"id": "studywithbuddy", "name": "Study With Buddy"},
-        {"id": "category2", "name": "Category 2"},
+        {"id": "pricing", "name": "Pricing"},
         {"id": "calendar", "name": "Calendar"},
         {"id": "ai", "name": "AI Solutions"}
     ]
