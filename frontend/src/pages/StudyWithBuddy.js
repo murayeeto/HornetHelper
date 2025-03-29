@@ -731,6 +731,17 @@ function GroupSessions({ setScreen }) {
 
             const docRef = await addDoc(collection(firebase.db, 'groupSessions'), sessionData);
             
+            // Initialize messages subcollection
+            const messagesRef = collection(doc(firebase.db, 'groupSessions', docRef.id), 'messages');
+            await addDoc(messagesRef, {
+                text: "Chat session initialized",
+                userId: "system",
+                displayName: "System",
+                timestamp: serverTimestamp(),
+                isAiMessage: true,
+                visibleToHornet: true
+            });
+            
             const newSession = {
                 id: docRef.id,
                 ...sessionData,

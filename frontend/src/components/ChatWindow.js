@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { FaRobot } from 'react-icons/fa';
+import axios from 'axios';
 import firebase from '../firebase';
 import './ChatWindow.css';
 
@@ -9,26 +10,44 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
     const [newMessage, setNewMessage] = useState('');
     const [showAiButtons, setShowAiButtons] = useState(false);
     const [charCount, setCharCount] = useState(0);
+    const [loading, setLoading] = useState(false);
     const messagesContainerRef = useRef(null);
     const MAX_CHARS = 400;
     
     useEffect(() => {
         if (!sessionId) return;
 
-        const isGroupSession = window.location.pathname.includes('group');
-        const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
-        const sessionRef = doc(firebase.db, collectionPath, sessionId);
-        const messagesRef = collection(sessionRef, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        let unsubscribe = () => {};
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const newMessages = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setMessages(newMessages);
-        });
+        const setupMessagesListener = async () => {
+            try {
+                // First try groupSessions
+                let collectionPath = 'groupSessions';
+                let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+                let sessionDoc = await getDoc(sessionDocRef);
 
+                // If not found, try regular sessions
+                if (!sessionDoc.exists()) {
+                    collectionPath = 'sessions';
+                    sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+                }
+
+                const messagesRef = collection(sessionDocRef, 'messages');
+                const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+                unsubscribe = onSnapshot(q, (snapshot) => {
+                    const newMessages = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setMessages(newMessages);
+                });
+            } catch (error) {
+                console.error("Error setting up messages listener:", error);
+            }
+        };
+
+        setupMessagesListener();
         return () => unsubscribe();
     }, [sessionId]);
 
@@ -45,10 +64,18 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
         if (!trimmedMessage || trimmedMessage.length > MAX_CHARS) return;
 
         try {
-            const isGroupSession = window.location.pathname.includes('group');
-            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
-            const sessionRef = doc(firebase.db, collectionPath, sessionId);
-            const messagesRef = collection(sessionRef, 'messages');
+            // First try groupSessions
+            let collectionPath = 'groupSessions';
+            let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            let sessionDoc = await getDoc(sessionDocRef);
+
+            // If not found, try regular sessions
+            if (!sessionDoc.exists()) {
+                collectionPath = 'sessions';
+                sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            }
+
+            const messagesRef = collection(sessionDocRef, 'messages');
             
             await addDoc(messagesRef, {
                 text: trimmedMessage,
@@ -66,14 +93,59 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
     };
 
     const handleAiRecommend = async () => {
+        setLoading(true);
         try {
-            const isGroupSession = window.location.pathname.includes('group');
-            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
-            const sessionRef = doc(firebase.db, collectionPath, sessionId);
+            if (!sessionId) {
+                throw new Error('No session ID provided');
+            }
+
+            // First try to find the session in groupSessions
+            let collectionPath = 'groupSessions';
+            let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            let sessionDoc = await getDoc(sessionDocRef);
+
+            // If not found in groupSessions, try regular sessions
+            if (!sessionDoc.exists()) {
+                collectionPath = 'sessions';
+                sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+                sessionDoc = await getDoc(sessionDocRef);
+            }
+
+            console.log("Getting session data for:", {
+                sessionId,
+                collectionPath,
+                exists: sessionDoc.exists()
+            });
+
+            if (!sessionDoc.exists()) {
+                throw new Error(`Session document not found: ${sessionId} in either collection`);
+            }
+
+            const sessionRef = sessionDocRef;
             const messagesRef = collection(sessionRef, 'messages');
+
+            const sessionData = sessionDoc.data();
+            console.log("Session data:", sessionData);
+            console.log("Course from session:", sessionData?.course);
+
+            // Check if we have course data
+            if (!sessionData?.course) {
+                throw new Error(`Session found but no course information available. Session ID: ${sessionId}`);
+            }
+
+            // Get video recommendations from backend
+            const response = await axios.post('http://localhost:8888/api/recommend-video', {
+                major: sessionData.course // Using course for recommendations
+            });
+
+            // Format video recommendations
+            const videos = response.data;
+            const recommendationText = videos.map(video => 
+                `${video.title}\n${video.url}\n${video.description}\n`
+            ).join('\n');
             
             await addDoc(messagesRef, {
-                text: "Here are some recommended videos:\n\nhttps://youtube.com/watch?v=example1\nhttps://youtube.com/watch?v=example2\nhttps://youtube.com/watch?v=example3",
+                text: `Here are some recommended videos for ${sessionData.course}:\n\n${recommendationText}`,
                 userId: "ai",
                 displayName: "AI Assistant",
                 timestamp: serverTimestamp(),
@@ -84,18 +156,67 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
             setShowAiButtons(false);
         } catch (error) {
             console.error("Error getting recommendations:", error);
+            // Add error message to chat
+            const isGroupSession = window.location.pathname.includes('group');
+            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
+            const messagesRef = collection(doc(firebase.db, collectionPath, sessionId), 'messages');
+            await addDoc(messagesRef, {
+                text: error.message.includes('No session ID provided')
+                    ? "Error: Chat session not properly initialized. Please try refreshing the page."
+                    : error.message.includes('Session document not found')
+                    ? "Error: Could not find the chat session. Please try refreshing the page."
+                    : error.message.includes('Session found but no course information')
+                    ? "Error: This chat session doesn't have a course assigned to it. Please make sure you're in a course-specific chat."
+                    : "Sorry, I couldn't get video recommendations at the moment. Please try again later.",
+                userId: "ai",
+                displayName: "AI Assistant",
+                timestamp: serverTimestamp(),
+                isAiMessage: true,
+                visibleToHornet: true
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleAiAsk = async () => {
+        setLoading(true);
         try {
-            const isGroupSession = window.location.pathname.includes('group');
-            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
-            const sessionRef = doc(firebase.db, collectionPath, sessionId);
-            const messagesRef = collection(sessionRef, 'messages');
+            // First try groupSessions
+            let collectionPath = 'groupSessions';
+            let sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            let sessionDoc = await getDoc(sessionDocRef);
+
+            // If not found, try regular sessions
+            if (!sessionDoc.exists()) {
+                collectionPath = 'sessions';
+                sessionDocRef = doc(firebase.db, collectionPath, sessionId);
+            }
+
+            const messagesRef = collection(sessionDocRef, 'messages');
             
+            // Only proceed if there's a message
+            if (!newMessage.trim()) {
+                return;
+            }
+
+            // Get AI response from backend
+            const response = await axios.post('http://localhost:8888/api/ask-ai', {
+                message: newMessage.trim()
+            });
+            
+            // Add user's question to chat
             await addDoc(messagesRef, {
-                text: "This is a simulated AI response. Replace with actual backend integration.",
+                text: newMessage.trim(),
+                userId: firebase.auth.currentUser.uid,
+                displayName: firebase.auth.currentUser.displayName,
+                timestamp: serverTimestamp(),
+                isAiMessage: false
+            });
+
+            // Add AI's response to chat
+            await addDoc(messagesRef, {
+                text: response.data.response,
                 userId: "ai",
                 displayName: "AI Assistant",
                 timestamp: serverTimestamp(),
@@ -103,9 +224,32 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                 visibleToHornet: true
             });
             
+            // Clear the input after sending
+            setNewMessage('');
+            setCharCount(0);
             setShowAiButtons(false);
         } catch (error) {
             console.error("Error getting AI response:", error);
+            console.error("Error details:", {
+                message: error.message,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            // Add error message to chat
+            const isGroupSession = window.location.pathname.includes('group');
+            const collectionPath = isGroupSession ? 'groupSessions' : 'sessions';
+            const messagesRef = collection(doc(firebase.db, collectionPath, sessionId), 'messages');
+            await addDoc(messagesRef, {
+                text: "Sorry, I'm having trouble connecting to the AI at the moment. Please try again later.",
+                userId: "ai",
+                displayName: "AI Assistant",
+                timestamp: serverTimestamp(),
+                isAiMessage: true,
+                visibleToHornet: true
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -146,14 +290,30 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                         </div>
                     )
                 ))}
+                {loading && (
+                    <div className="chat-message ai">
+                        <div className="message-content">
+                            <span className="message-sender">AI Assistant</span>
+                            <p>Thinking...</p>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="message-form-container">
                 {showAiButtons && isHornet && (
                     <div className="ai-buttons">
-                        <button onClick={handleAiRecommend} className="ai-button recommend">
+                        <button 
+                            onClick={handleAiRecommend} 
+                            className="ai-button recommend"
+                            disabled={loading}
+                        >
                             Recommend
                         </button>
-                        <button onClick={handleAiAsk} className="ai-button ask">
+                        <button 
+                            onClick={handleAiAsk} 
+                            className="ai-button ask"
+                            disabled={loading}
+                        >
                             Ask
                         </button>
                     </div>
@@ -172,6 +332,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                         placeholder="Type a message..."
                         className="message-input"
                         maxLength={MAX_CHARS}
+                        disabled={loading}
                     />
                     <div style={{
                         position: 'absolute',
@@ -185,7 +346,7 @@ const ChatWindow = ({ sessionId, isOpen, onClose, isHornet }) => {
                     <button 
                         type="submit" 
                         className="send-button"
-                        disabled={!newMessage.trim() || newMessage.length > MAX_CHARS}
+                        disabled={loading || !newMessage.trim() || newMessage.length > MAX_CHARS}
                     >
                         Send
                     </button>

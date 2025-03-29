@@ -20,8 +20,10 @@ def get_ai_response(prompt):
     """
     try:
         if not openai.api_key:
+            print("Error: OpenAI API key not found")
             return "OpenAI API key not configured. Please set OPENAI_API_KEY in your environment."
             
+        print("Attempting to get AI response for prompt:", prompt)
         # Create the chat completion
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -44,8 +46,9 @@ def get_video_recommendation(major):
     Get a video recommendation from YouTube based on the user's major
     """
     try:
-        # Search for educational videos related to the major
-        search_query = f"{major} study tutorial education"
+        # Search for educational videos related to the course
+        # Clean up the course name and add relevant educational terms
+        search_query = f"{major} course lecture tutorial concepts"
         request = youtube.search().list(
             part="snippet",
             q=search_query,
@@ -76,5 +79,7 @@ def get_video_recommendation(major):
 
         return videos
     except Exception as e:
-        print(f"Error getting video recommendation: {str(e)}")
+        print(f"Error getting video recommendation for course '{major}': {str(e)}")
+        if not YOUTUBE_API_KEY:
+            print("YouTube API key is missing!")
         return None
