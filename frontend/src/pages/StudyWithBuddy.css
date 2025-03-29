@@ -230,10 +230,29 @@
     border-radius: 5px;
 }
 
-.participants-list h4 {
-    margin: 0 0 10px 0;
+.participants-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.participants-header h4 {
+    margin: 0;
     color: #333;
     font-size: 1rem;
+}
+
+.session-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.session-status.full {
+    background-color: #dc3545;
+    color: white;
 }
 
 .participant-grid {
@@ -286,6 +305,11 @@
 .join-btn.joined {
     background-color: #28a745;
     cursor: default;
+}
+
+.join-btn.full {
+    background-color: #dc3545;
+    cursor: not-allowed;
 }
 
 .join-btn:disabled {
