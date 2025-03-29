@@ -225,6 +225,7 @@
     opacity: 1;
     transition: all 0.5s ease;
     background: var(--dark-blue);
+    padding-top: 5rem;
   }
 
   .nav-menu.active {
@@ -236,15 +237,14 @@
 
   .nav-item {
     height: 60px;
-    width: 100%;
+    width: auto;
   }
 
-  .nav-link {
-    text-align: center;
-    padding: 1.5rem;
-    width: 100%;
-    display: table;
+  .nav-link{
+    height: auto;
+    padding: .65rem;
   }
+
 
   .nav-link:hover {
     color: var(--primary-red);
