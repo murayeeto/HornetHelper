@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./StudyWithBuddy.css";
 import { useAuth } from "../contexts/AuthContext";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
 import {
     collection,
     addDoc,
@@ -18,6 +20,8 @@ import {
 import firebase from '../firebase';
 import dsuCampusLocations from '../data/dsuCampusLocations';
 import departmentsAndMajors from '../data/departmentsAndMajors';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function HomeScreen({ setScreen }) {
     return (
@@ -135,11 +139,10 @@ function DuoSessions({ setScreen }) {
 
     const removeFromCalendar = async (sessionData) => {
         try {
-            const date = new Date(sessionData.dateTime);
-            const dateKey = date.toISOString().split('T')[0];
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const timeValue = hours + (minutes / 60);
+            const [datePart, timePart] = sessionData.dateTime.split('T');
+            const [hours, minutes] = timePart.split(':');
+            const timeValue = parseInt(hours, 10) + (parseInt(minutes, 10) / 60);
+            const dateKey = datePart;
 
             // Get current calendar events
             const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
@@ -187,13 +190,16 @@ function DuoSessions({ setScreen }) {
 
     const addToCalendar = async (sessionData) => {
         try {
-            const date = new Date(sessionData.dateTime);
-            const dateKey = date.toISOString().split('T')[0];
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12;
-            const timeValue = hours + (minutes / 60);
+            // Create date in local timezone
+            const [datePart, timePart] = sessionData.dateTime.split('T');
+            const [hours, minutes] = timePart.split(':');
+            const date = new Date(datePart);
+            date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+            
+            const dateKey = datePart;
+            const period = parseInt(hours, 10) >= 12 ? 'PM' : 'AM';
+            const displayHours = parseInt(hours, 10) % 12 || 12;
+            const timeValue = parseInt(hours, 10) + (parseInt(minutes, 10) / 60);
 
             // Get current calendar events
             const eventsRef = doc(firebase.db, 'users', user.uid, 'data', 'events');
@@ -326,6 +332,7 @@ function DuoSessions({ setScreen }) {
                                 value={selectedCourse}
                                 onChange={(e) => setSelectedCourse(e.target.value)}
                                 placeholder="Enter course (e.g. COMP 3700)"
+                                required
                             />
                         </div>
                         <div className="form-group">
@@ -333,6 +340,7 @@ function DuoSessions({ setScreen }) {
                             <select
                                 value={selectedMajor}
                                 onChange={(e) => setSelectedMajor(e.target.value)}
+                                required
                             >
                                 <option value="">Select major</option>
                                 {allMajors.map(major => (
@@ -348,6 +356,7 @@ function DuoSessions({ setScreen }) {
                                 type="datetime-local"
                                 value={dateTime}
                                 onChange={(e) => setDateTime(e.target.value)}
+                                required
                             />
                         </div>
                         <div className="form-group">
@@ -355,6 +364,7 @@ function DuoSessions({ setScreen }) {
                             <select
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
+                                required
                             >
                                 <option value="">Select location</option>
                                 {dsuCampusLocations.map(loc => (
@@ -370,8 +380,63 @@ function DuoSessions({ setScreen }) {
 
                 <div className="stats-section">
                     <h2>Number of active sessions: {sessions.filter(s => s.active).length}</h2>
-                    <h3>Sections by subject:</h3>
-                    {/* Add your pie chart component here */}
+                    <h3>Sessions by Department:</h3>
+                    <div style={{ width: '300px', height: '300px', margin: '0 auto' }}>
+                        <Pie
+                            data={{
+                                labels: Object.keys(departmentsAndMajors),
+                                datasets: [{
+                                    data: Object.keys(departmentsAndMajors).map(dept => 
+                                        sessions.filter(session => 
+                                            departmentsAndMajors[dept].includes(session.major)
+                                        ).length
+                                    ),
+                                    backgroundColor: [
+                                        '#FF6384',
+                                        '#36A2EB',
+                                        '#FFCE56',
+                                        '#4BC0C0',
+                                        '#9966FF',
+                                        '#FF9F40',
+                                        '#FF6384',
+                                        '#36A2EB'
+                                    ],
+                                    borderColor: [
+                                        '#FF6384',
+                                        '#36A2EB',
+                                        '#FFCE56',
+                                        '#4BC0C0',
+                                        '#9966FF',
+                                        '#FF9F40',
+                                        '#FF6384',
+                                        '#36A2EB'
+                                    ],
+                                    borderWidth: 1,
+                                }]
+                            }}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'right',
+                                        labels: {
+                                            boxWidth: 20
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.raw || 0;
+                                                return `${label}: ${value} sessions`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -434,19 +499,20 @@ function DuoSessions({ setScreen }) {
                         </label>
                     </div>
                 </div>
-<button
-    className="action-btn"
-    onClick={() => setShowFiltered(!showFiltered)}
->
-    {showFiltered ? 'Show All Sessions' : 'View Open Sessions'}
-</button>
-</div>
 
-<div className="session-section">
-<h2>Available Study Sessions</h2>
-<div className="session-cards">
-    {filteredSessions.map((session) => {
-        const isParticipant = session.participants?.some(p => p.uid === user.uid);
+                <button 
+                    className="action-btn" 
+                    onClick={() => setShowFiltered(!showFiltered)}
+                >
+                    {showFiltered ? 'Show All Sessions' : 'View Open Sessions'}
+                </button>
+            </div>
+
+            <div className="session-section">
+                <h2>Available Study Sessions</h2>
+                <div className="session-cards">
+                    {filteredSessions.map((session) => {
+                        const isParticipant = session.participants?.some(p => p.uid === user.uid);
                         return (
                             <div key={session.id} className="session-card">
                                 <img
