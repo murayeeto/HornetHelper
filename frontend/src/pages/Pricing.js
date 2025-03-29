@@ -39,6 +39,10 @@ const Pricing = () => {
       color: 'gold',
       price: billingCycle === 'monthly' ? '$9.99/month' : '$89.99/year',
       features: [
+        'Personalized study plans',
+        'Sub-tasker',
+        'Video Calls',
+        'Group white boards'
       ],
       cta: 'Coming Soon',
       disabled: true
