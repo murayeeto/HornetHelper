@@ -10,7 +10,9 @@ import {
     serverTimestamp,
     doc,
     setDoc,
-    arrayUnion
+    deleteDoc,
+    arrayUnion,
+    arrayRemove
 } from 'firebase/firestore';
 import firebase from '../firebase';
 
@@ -75,6 +77,52 @@ function DuoSessions({ setScreen }) {
         fetchSessions();
     }, []);
 
+    const handleLeaveSession = async (sessionId) => {
+        try {
+            const sessionRef = doc(firebase.db, 'sessions', sessionId);
+            const session = sessions.find(s => s.id === sessionId);
+            
+            await setDoc(sessionRef, {
+                participants: arrayRemove({
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                }),
+                full: false,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            // Update local state
+            setSessions(prevSessions =>
+                prevSessions.map(session =>
+                    session.id === sessionId
+                        ? {
+                            ...session,
+                            participants: session.participants.filter(p => p.uid !== user.uid),
+                            full: false
+                        }
+                        : session
+                )
+            );
+        } catch (error) {
+            console.error("Error leaving session:", error);
+        }
+    };
+
+    const handleDisbandSession = async (sessionId) => {
+        try {
+            const sessionRef = doc(firebase.db, 'sessions', sessionId);
+            await deleteDoc(sessionRef);
+
+            // Update local state
+            setSessions(prevSessions =>
+                prevSessions.filter(session => session.id !== sessionId)
+            );
+        } catch (error) {
+            console.error("Error disbanding session:", error);
+        }
+    };
+
     const handleJoinSession = async (sessionId) => {
         try {
             const sessionRef = doc(firebase.db, 'sessions', sessionId);
@@ -136,7 +184,8 @@ function DuoSessions({ setScreen }) {
                     photoURL: user.photoURL
                 }],
                 userGender: gender,
-                full: false
+                full: false,
+                active: true
             };
 
             const docRef = await addDoc(collection(firebase.db, 'sessions'), sessionData);
@@ -196,7 +245,7 @@ function DuoSessions({ setScreen }) {
                 </div>
 
                 <div className="stats-section">
-                    <h2>Number of active sessions: 21</h2>
+                    <h2>Number of active sessions: {sessions.filter(s => s.active).length}</h2>
                     <h3>Sections by subject:</h3>
                     {/* Add your pie chart component here */}
                 </div>
@@ -299,15 +348,39 @@ function DuoSessions({ setScreen }) {
                                         ))}
                                     </div>
                                 </div>
-                                {user.uid !== session.userId && (
-                                    <button
-                                        className={`join-btn ${isParticipant ? 'joined' : ''} ${session.full ? 'full' : ''}`}
-                                        onClick={() => !isParticipant && !session.full && handleJoinSession(session.id)}
-                                        disabled={isParticipant || session.full}
-                                    >
-                                        {isParticipant ? 'Joined' : session.full ? 'Session Full' : 'Join Session'}
-                                    </button>
-                                )}
+                                <div className="session-actions">
+                                    {user.uid === session.userId ? (
+                                        <button
+                                            className="disband-btn"
+                                            onClick={() => {
+                                                if (window.confirm('Are you sure you want to disband this session? This action cannot be undone.')) {
+                                                    handleDisbandSession(session.id);
+                                                }
+                                            }}
+                                        >
+                                            Disband Session
+                                        </button>
+                                    ) : isParticipant ? (
+                                        <button
+                                            className="leave-btn"
+                                            onClick={() => {
+                                                if (window.confirm('Are you sure you want to leave this session?')) {
+                                                    handleLeaveSession(session.id);
+                                                }
+                                            }}
+                                        >
+                                            Leave Session
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className={`join-btn ${session.full ? 'full' : ''}`}
+                                            onClick={() => !session.full && handleJoinSession(session.id)}
+                                            disabled={session.full}
+                                        >
+                                            {session.full ? 'Session Full' : 'Join Session'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
