@@ -42,8 +42,8 @@ data = {
         "title": "Welcome to Hornet Helper",
         "description": "Your one-stop solution for all your needs"
     },
-    "category1": {
-        "title": "Category 1",
+    "studywithbuddy": {
+        "title": "Study With Buddy",
         "items": ["Item 1", "Item 2", "Item 3"]
     },
     "category2": {
@@ -99,7 +99,7 @@ def get_category(category_name):
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
     categories = [
-        {"id": "category1", "name": "Category 1"},
+        {"id": "studywithbuddy", "name": "Study With Buddy"},
         {"id": "category2", "name": "Category 2"},
         {"id": "category3", "name": "Category 3"},
         {"id": "calendar", "name": "Calendar"},

@@ -9,12 +9,12 @@ import PrivateRoute from './components/PrivateRoute';
 
 // Pages
 import Home from './pages/Home';
-import Category1 from './pages/Category1';
 import Category2 from './pages/Category2';
 import Category3 from './pages/Category3';
 import Calendar from './pages/Calendar';
 import AI from './pages/AI';
 import Account from './pages/Account';
+import StudyWithBuddy from './pages/StudyWithBuddy';
 
 // Auth Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -28,61 +28,61 @@ function App() {
           <div className="container">
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route 
-                path="/" 
+              <Route
+                path="/"
                 element={
                   <PrivateRoute>
                     <Home />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/category1" 
+              <Route
+                path="/studywithbuddy"
                 element={
                   <PrivateRoute>
-                    <Category1 />
+                    <StudyWithBuddy />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/category2" 
+              <Route
+                path="/category2"
                 element={
                   <PrivateRoute>
                     <Category2 />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/category3" 
+              <Route
+                path="/category3"
                 element={
                   <PrivateRoute>
                     <Category3 />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/calendar" 
+              <Route
+                path="/calendar"
                 element={
                   <PrivateRoute>
                     <Calendar />
                   </PrivateRoute>
-                } 
-              />           
-              <Route 
-                path="/ai" 
+                }
+              />
+              <Route
+                path="/ai"
                 element={
                   <PrivateRoute>
                     <AI />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/account" 
+              <Route
+                path="/account"
                 element={
                   <PrivateRoute>
                     <Account />
                   </PrivateRoute>
-                } 
+                }
               />
             </Routes>
           </div>

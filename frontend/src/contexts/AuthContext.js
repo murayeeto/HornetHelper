@@ -3,8 +3,7 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
-  onAuthStateChanged,
-  updateProfile
+  onAuthStateChanged 
 } from 'firebase/auth';
 import { 
   doc, 
@@ -12,12 +11,7 @@ import {
   getDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { 
-  ref, 
-  uploadBytes, 
-  getDownloadURL
-} from 'firebase/storage';
-import firebase from '../firebase';
+import { auth, db } from '../firebase/firebase';
 
 const AuthContext = createContext();
 
@@ -33,13 +27,21 @@ export function AuthProvider({ children }) {
   async function signInWithGoogle() {
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(firebase.auth, provider);
+      // Configure custom parameters for the Google provider
+      provider.setCustomParameters({
+        prompt: 'select_account',
+        // Add additional OAuth 2.0 scopes if needed
+        // scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
+      });
+
+      const result = await signInWithPopup(auth, provider);
       
       // Create or update user document
-      const userRef = doc(firebase.db, 'users', result.user.uid);
+      const userRef = doc(db, 'users', result.user.uid);
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
+        // Create new user document
         await setDoc(userRef, {
           email: result.user.email,
           displayName: result.user.displayName,
@@ -52,113 +54,20 @@ export function AuthProvider({ children }) {
       return result.user;
     } catch (error) {
       console.error("Error signing in with Google:", error);
-      setError(error.message);
-      throw error;
-    }
-  }
-
-  async function updateDisplayName(newDisplayName) {
-    try {
-      if (!user) throw new Error("No authenticated user");
-      if (newDisplayName.length > 14) throw new Error("Display name must be 14 characters or less");
-      
-      await updateProfile(firebase.auth.currentUser, {
-        displayName: newDisplayName
-      });
-
-      const userRef = doc(firebase.db, 'users', user.uid);
-      await setDoc(userRef, {
-        displayName: newDisplayName,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      setUser(prevUser => ({
-        ...prevUser,
-        displayName: newDisplayName
-      }));
-
-      return true;
-    } catch (error) {
-      console.error("Error updating display name:", error);
-      setError(error.message);
-      throw error;
-    }
-  }
-
-  async function updateProfilePicture(file) {
-    try {
-      console.log('Starting profile picture update...');
-      
-      if (!user) {
-        throw new Error("No authenticated user");
+      // Handle specific Firebase auth errors
+      switch (error.code) {
+        case 'auth/popup-blocked':
+          setError('Please enable popups for this website to sign in with Google.');
+          break;
+        case 'auth/popup-closed-by-user':
+          setError('Sign-in was cancelled. Please try again.');
+          break;
+        case 'auth/cancelled-popup-request':
+          // This is a normal case when multiple popups are triggered quickly
+          break;
+        default:
+          setError(error.message || 'Failed to sign in with Google');
       }
-      
-      if (!file) {
-        throw new Error("No file provided");
-      }
-
-      console.log('File details:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-
-      // Basic validation
-      if (!file.type.startsWith('image/')) {
-        throw new Error("Please upload an image file");
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error("File size must be less than 5MB");
-      }
-
-      // Create storage reference
-      console.log('Creating storage reference...');
-      const storageRef = ref(firebase.storage, `profile-pictures/${user.uid}`);
-      console.log('Storage reference created:', storageRef);
-
-      try {
-        // Upload file
-        console.log('Starting file upload...');
-        const snapshot = await uploadBytes(storageRef, file);
-        console.log('File uploaded successfully:', snapshot);
-
-        // Get download URL
-        console.log('Getting download URL...');
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log('Got download URL:', downloadURL);
-
-        // Update auth profile
-        console.log('Updating auth profile...');
-        await updateProfile(firebase.auth.currentUser, {
-          photoURL: downloadURL
-        });
-        console.log('Auth profile updated');
-
-        // Update Firestore
-        console.log('Updating Firestore...');
-        const userRef = doc(firebase.db, 'users', user.uid);
-        await setDoc(userRef, {
-          photoURL: downloadURL,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        console.log('Firestore updated');
-
-        // Update local state
-        setUser(prevUser => ({
-          ...prevUser,
-          photoURL: downloadURL
-        }));
-
-        console.log('Profile picture update completed successfully');
-        return true;
-      } catch (uploadError) {
-        console.error('Error during upload process:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-    } catch (error) {
-      console.error('Error in updateProfilePicture:', error);
-      setError(error.message);
       throw error;
     }
   }
@@ -167,7 +76,7 @@ export function AuthProvider({ children }) {
     try {
       if (!user) throw new Error("No authenticated user");
       
-      const userRef = doc(firebase.db, 'users', user.uid);
+      const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
         major,
         updatedAt: serverTimestamp()
@@ -188,7 +97,7 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await signOut(firebase.auth);
+      await signOut(auth);
       setUser(null);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -198,11 +107,11 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebase.auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
           // Get additional user data from Firestore
-          const userRef = doc(firebase.db, 'users', firebaseUser.uid);
+          const userRef = doc(db, 'users', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           
           if (userSnap.exists()) {
@@ -234,8 +143,6 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     logout,
     updateMajor,
-    updateDisplayName,
-    updateProfilePicture,
     error,
     setError
   };
