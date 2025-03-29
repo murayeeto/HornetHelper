@@ -1,11 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './Faq.css';
 
 const Faq = () => {
+  const [showAiDemo, setShowAiDemo] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [videoRecommendation, setVideoRecommendation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(null);
+  const [userInput, setUserInput] = useState('');
   const [faqData, setFaqData] = useState({
     title: "Frequently Asked Questions",
     categories: [
+      {
+        title: "AI Features",
+        items: [
+          {
+            question: "What AI features are available?",
+            answer: "We offer two powerful AI features: 1) An intelligent tutoring system powered by a neural chat model that can help with your studies, and 2) A smart YouTube video recommendation system that suggests educational content based on your major."
+          },
+          {
+            question: "How accurate are the AI recommendations?",
+            answer: "Our AI system uses state-of-the-art models including the IBL Tutoring Neural Chat model for personalized assistance and integrates with YouTube's API to find highly relevant educational content for your field of study."
+          }
+        ]
+      },
       {
         title: "General Questions",
         items: [
@@ -49,21 +68,31 @@ const Faq = () => {
           },
           {
             question: "How does the AI resource recommendation work?",
-            answer: "Our AI analyzes."
+            answer: "Our AI analyzes your major, interests, and study patterns to provide personalized learning resources and study materials."
           }
         ]
       }
     ]
   });
-  const [loading, setLoading] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(null);
+
+  const chatContainerRef = useRef(null);
+  const aiDemoRef = useRef(null);
+
+  const scrollToDemo = () => {
+    if (aiDemoRef.current) {
+      aiDemoRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   useEffect(() => {
     const fetchFaqData = async () => {
       try {
-        // In a real app, you might fetch this from your API
-        // const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/faq`);
-        // setFaqData(response.data);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching FAQ data:', error);
@@ -78,14 +107,42 @@ const Faq = () => {
     setActiveIndex(activeIndex === index ? null : index);
   };
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  const handleAskAi = async () => {
+    if (!userInput.trim()) return;
+
+    const userMessage = userInput;
+    setUserInput('');
+    setChatMessages(prev => [...prev, { type: 'user', text: userMessage }]);
+    
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:8000/api/ask-ai', {
+        message: userMessage
+      });
+      setChatMessages(prev => [...prev, { type: 'ai', text: response.data.response }]);
+    } catch (error) {
+      console.error('Error asking AI:', error);
+      setChatMessages(prev => [...prev, {
+        type: 'error',
+        text: 'Sorry, there was an error connecting to the AI. Please try again later.'
+      }]);
+    }
+    setLoading(false);
+  };
+
+  const handleGetVideoRecommendation = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:8000/api/recommend-video', {
+        major: "Computer Science" // This should come from user's profile
+      });
+      setVideoRecommendation(response.data);
+    } catch (error) {
+      console.error('Error getting video recommendation:', error);
+      setVideoRecommendation(null);
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="faq-page">
@@ -123,6 +180,93 @@ const Faq = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="ai-demo-section" ref={aiDemoRef}>
+        <h2>AI Features Demo</h2>
+        <div className="demo-buttons">
+          <button
+            type="button"
+            onClick={() => {
+              setShowAiDemo(true);
+              scrollToDemo();
+            }}
+            className="demo-button"
+          >
+            Demo Now!
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              handleGetVideoRecommendation();
+              scrollToDemo();
+            }}
+            className="recommend-button"
+          >
+            Recommend Video
+          </button>
+        </div>
+
+        {showAiDemo && (
+          <div className={`ai-chat-demo ${loading ? 'loading' : ''}`}>
+            <div className="chat-messages" ref={chatContainerRef}>
+              {chatMessages.map((message, index) => (
+                <div key={index} className={`chat-message ${message.type}`}>
+                  <div className="message-content">
+                    <span className="message-sender">
+                      {message.type === 'user' ? 'You' : 'AI Assistant'}:
+                    </span>
+                    <p>{message.text}</p>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="chat-message ai">
+                  <div className="message-content">
+                    <span className="message-sender">AI Assistant:</span>
+                    <p>Thinking...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAskAi();
+                if (chatContainerRef.current) {
+                  chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                }
+              }}
+              className="chat-input-form"
+            >
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Ask me anything about studying..."
+                className="chat-input"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                className="ask-ai-button"
+                disabled={loading || !userInput.trim()}
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        )}
+
+        {videoRecommendation && (
+          <div className="video-recommendation">
+            <h3>Recommended Video:</h3>
+            <p>{videoRecommendation.title}</p>
+            <a href={videoRecommendation.url} target="_blank" rel="noopener noreferrer">
+              Watch Video
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="faq-support">
