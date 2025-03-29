@@ -317,6 +317,40 @@
     cursor: not-allowed;
 }
 
+.leave-btn {
+    background-color: #ffc107;
+    color: #000;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.leave-btn:hover {
+    background-color: #e0a800;
+}
+
+.disband-btn {
+    background-color: #dc3545;
+    color: white;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.disband-btn:hover {
+    background-color: #c82333;
+}
+
 @media screen and (max-width: 1200px){   
     .options-container{
         flex-wrap: wrap;
