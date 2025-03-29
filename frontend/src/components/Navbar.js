@@ -23,9 +23,9 @@ const Navbar = () => {
         console.error('Error fetching categories:', error);
         setCategories([
           { id: 'studywithbuddy', name: 'Study With Buddy' },
-          { id: 'category2', name: 'Category 2' },
+          { id: 'ai', name: 'AI Solutions' },
           { id: 'calendar', name: 'Calendar' },
-          { id: 'ai', name: 'AI Solutions' }
+          { id: 'pricing', name: 'Pricing' }
         ]);
       }
     };
