@@ -78,12 +78,26 @@ function DuoSessions({ setScreen }) {
     const handleJoinSession = async (sessionId) => {
         try {
             const sessionRef = doc(firebase.db, 'sessions', sessionId);
+            const session = sessions.find(s => s.id === sessionId);
+            
+            if (session.participants?.length >= 2) {
+                alert("Session is full, please join another one");
+                return;
+            }
+
+            const newParticipant = {
+                uid: user.uid,
+                displayName: user.displayName,
+                photoURL: user.photoURL
+            };
+
+            const updatedParticipants = [...(session.participants || []), newParticipant];
+            const isFull = updatedParticipants.length === 2;
+
             await setDoc(sessionRef, {
-                participants: arrayUnion({
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
-                })
+                participants: arrayUnion(newParticipant),
+                full: isFull,
+                updatedAt: serverTimestamp()
             }, { merge: true });
 
             // Update local state
@@ -92,11 +106,8 @@ function DuoSessions({ setScreen }) {
                     session.id === sessionId
                         ? {
                             ...session,
-                            participants: [...(session.participants || []), {
-                                uid: user.uid,
-                                displayName: user.displayName,
-                                photoURL: user.photoURL
-                            }]
+                            participants: updatedParticipants,
+                            full: isFull
                         }
                         : session
                 )
@@ -124,7 +135,8 @@ function DuoSessions({ setScreen }) {
                     displayName: user.displayName,
                     photoURL: user.photoURL
                 }],
-                userGender: gender
+                userGender: gender,
+                full: false
             };
 
             const docRef = await addDoc(collection(firebase.db, 'sessions'), sessionData);
@@ -268,7 +280,12 @@ function DuoSessions({ setScreen }) {
                                 <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
                                 <p>Place: {session.location}</p>
                                 <div className="participants-list">
-                                    <h4>Participants:</h4>
+                                    <div className="participants-header">
+                                        <h4>Participants:</h4>
+                                        {session.full && (
+                                            <span className="session-status full">Session Full</span>
+                                        )}
+                                    </div>
                                     <div className="participant-grid">
                                         {session.participants?.map(participant => (
                                             <div key={participant.uid} className="participant-item">
@@ -284,11 +301,11 @@ function DuoSessions({ setScreen }) {
                                 </div>
                                 {user.uid !== session.userId && (
                                     <button
-                                        className={`join-btn ${isParticipant ? 'joined' : ''}`}
-                                        onClick={() => !isParticipant && handleJoinSession(session.id)}
-                                        disabled={isParticipant}
+                                        className={`join-btn ${isParticipant ? 'joined' : ''} ${session.full ? 'full' : ''}`}
+                                        onClick={() => !isParticipant && !session.full && handleJoinSession(session.id)}
+                                        disabled={isParticipant || session.full}
                                     >
-                                        {isParticipant ? 'Joined' : 'Join Session'}
+                                        {isParticipant ? 'Joined' : session.full ? 'Session Full' : 'Join Session'}
                                     </button>
                                 )}
                             </div>
