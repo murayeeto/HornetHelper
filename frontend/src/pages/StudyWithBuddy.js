@@ -448,26 +448,28 @@ function DuoSessions({ setScreen }) {
                                     <div className="participants-header">
                                         <h4>Participants:</h4>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <button
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '5px',
-                                                    cursor: 'pointer',
-                                                    padding: '5px 10px',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
-                                                    color: activeChatSession === session.id ? 'white' : 'inherit',
-                                                    border: 'none',
-                                                    fontSize: 'inherit'
-                                                }}
-                                                onClick={() => setActiveChatSession(activeChatSession === session.id ? null : session.id)}
-                                            >
-                                                <FaComments
-                                                    className="chat-icon"
-                                                    style={{ fontSize: '20px' }}
-                                                />
-                                            </button>
+                                            {(isParticipant || user?.uid === session.userId) && (
+                                                <button
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '5px',
+                                                        cursor: 'pointer',
+                                                        padding: '5px 10px',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
+                                                        color: activeChatSession === session.id ? 'white' : 'inherit',
+                                                        border: 'none',
+                                                        fontSize: 'inherit'
+                                                    }}
+                                                    onClick={() => setActiveChatSession(activeChatSession === session.id ? null : session.id)}
+                                                >
+                                                    <FaComments
+                                                        className="chat-icon"
+                                                        style={{ fontSize: '20px' }}
+                                                    />
+                                                </button>
+                                            )}
                                             {session.full && (
                                                 <span className="session-status full">Session Full</span>
                                             )}
@@ -958,28 +960,30 @@ function GroupSessions({ setScreen }) {
                                         <h3 style={{ margin: 0 }}>{session.displayName}</h3>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '5px',
-                                                cursor: 'pointer',
-                                                padding: '5px 10px',
-                                                borderRadius: '4px',
-                                                backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
-                                                color: activeChatSession === session.id ? 'white' : 'inherit',
-                                                marginRight: '10px'
-                                            }}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActiveChatSession(activeChatSession === session.id ? null : session.id);
-                                            }}
-                                        >
-                                            <FaComments
-                                                className="chat-icon"
-                                                style={{ fontSize: '20px' }}
-                                            />
-                                        </div>
+                                        {(isParticipant || user?.uid === session.userId) && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    cursor: 'pointer',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: activeChatSession === session.id ? '#4a90e2' : 'transparent',
+                                                    color: activeChatSession === session.id ? 'white' : 'inherit',
+                                                    marginRight: '10px'
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveChatSession(activeChatSession === session.id ? null : session.id);
+                                                }}
+                                            >
+                                                <FaComments
+                                                    className="chat-icon"
+                                                    style={{ fontSize: '20px' }}
+                                                />
+                                            </div>
+                                        )}
                                         <div
                                             className="capacity-indicator"
                                             onClick={(e) => handleCapacityClick(session, e)}
