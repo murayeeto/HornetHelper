@@ -55,6 +55,7 @@
   background: linear-gradient(145deg, #f8f9fa, #e9ecef);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  position: relative;
 }
 
 .ai-demo-section h2 {
@@ -251,38 +252,115 @@
   transform: none;
 }
 
-.video-recommendation {
-  margin-top: 30px;
+.major-selector {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.major-dropdown {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 300px;
+}
+
+.major-dropdown:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+
+.major-dropdown:hover {
+  border-color: #6366f1;
+}
+
+.video-recommendations {
+  margin-top: 20px;
   padding: 25px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.video-recommendation h3 {
+.video-recommendations h3 {
   color: #2c3e50;
-  margin-bottom: 15px;
-  font-size: 20px;
+  margin-bottom: 25px;
+  font-size: 24px;
+  text-align: center;
 }
 
-.video-recommendation p {
-  color: #4b5563;
-  margin-bottom: 15px;
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.video-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.video-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+
+.video-thumbnail {
+  width: 100%;
+  height: 158px;
+  object-fit: cover;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.video-card h4 {
+  padding: 15px;
+  margin: 0;
+  color: #2c3e50;
   font-size: 16px;
+  line-height: 1.4;
+  height: 70px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
-.video-recommendation a {
-  display: inline-block;
+.video-card p {
+  padding: 0 15px;
+  margin: 0 0 15px 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  height: 60px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.watch-button {
+  display: block;
+  margin: 15px;
   padding: 10px 20px;
   background: linear-gradient(135deg, #34d399, #059669);
   color: white;
   text-decoration: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 600;
+  text-align: center;
   transition: all 0.3s ease;
 }
 
-.video-recommendation a:hover {
+.watch-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }

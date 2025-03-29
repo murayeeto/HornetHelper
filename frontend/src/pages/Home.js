@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import departmentsAndMajors from '../data/departmentsAndMajors';
+
+// Flatten majors list
+const allMajors = Object.values(departmentsAndMajors).flat().sort();
 
 const Home = () => {
   const [homeData, setHomeData] = useState({
@@ -70,7 +74,7 @@ const Home = () => {
     <div className="home-page">
       <section className="hero-section">
         <h1>{homeData.title}</h1>
-        <p>{homeData.description}</p>
+        <p style={{ color: 'white' }}>{homeData.description}</p>
         {!user ? (
           <button onClick={handleGoogleSignIn} className="btn btn-primary google-signin">
             Login to Get Started
@@ -78,13 +82,18 @@ const Home = () => {
         ) : showMajorInput ? (
           <div className="major-section">
             <form onSubmit={handleMajorSubmit} className="major-form-hero">
-              <input
-                type="text"
-                placeholder="Enter your major"
+              <select
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
                 className="major-input-hero"
-              />
+              >
+                <option value="">Select your major</option>
+                {allMajors.map((majorOption) => (
+                  <option key={majorOption} value={majorOption}>
+                    {majorOption}
+                  </option>
+                ))}
+              </select>
               <button type="submit" className="btn btn-primary">
                 Set Major
               </button>
@@ -165,7 +174,7 @@ const Home = () => {
         }
 
         .major-note {
-          color: #666;
+          color: white;
           font-size: 0.9rem;
           text-align: center;
           margin-top: 0.5rem;
