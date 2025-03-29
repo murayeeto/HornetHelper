@@ -6,6 +6,8 @@ import './Faq.css';
 
 // Flatten majors list
 const allMajors = Object.values(departmentsAndMajors).flat().sort();
+const backendIp = 'https://hornethelper.onrender.com';
+// const backendIp = 'http://localhost:8888';
 
 // Static FAQ data
 const faqData = {
@@ -123,7 +125,7 @@ const Faq = () => {
     
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8888/api/ask-ai', {
+      const response = await axios.post(`${backendIp}/api/ask-ai`, {
         message: userMessage
       });
       setChatMessages(prev => [...prev, { type: 'ai', text: response.data.response }]);
@@ -145,7 +147,7 @@ const Faq = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8888/api/recommend-video', {
+      const response = await axios.post(`${backendIp}/api/recommend-video`, {
         major: user ? user.major : selectedMajor
       });
       console.log('Video response:', response.data);

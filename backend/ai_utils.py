@@ -48,7 +48,7 @@ def get_ai_response(prompt):
             
         print("Attempting to get AI response for prompt:", prompt)
         # Create the chat completion
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a kind and supportive teacher who helps students succeed. Keep responses concise (3-4 sentences max). Be clear, encouraging, and practical. Use simple formatting - no markdown or special characters. Focus on giving actionable advice and clear explanations and also try not give the user the direct answer they are seeking rather seek to guide them to the correct answer."},
