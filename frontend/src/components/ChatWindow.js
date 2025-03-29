@@ -73,19 +73,19 @@ const ChatWindow = ({ sessionId, isOpen, onClose }) => {
                             className={`message ${message.userId === firebase.auth.currentUser?.uid ? 'own-message' : ''}`}
                             style={{
                                 position: 'absolute',
-                                top: `${index * 50}px`,
+                                top: `${index * 70}px`,
                                 width: '100%'
                             }}
                         >
+                            <div className="message-sender">
+                                {message.displayName}
+                            </div>
                             <div className="message-content">
                                 {message.text}
                             </div>
-                            <span className="message-time">
-                                {message.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
                         </div>
                     ))}
-                    <div style={{ height: `${messages.length * 50}px` }} />
+                    <div style={{ height: `${messages.length * 70}px` }} />
                 </div>
             </div>
             <form onSubmit={handleSubmit} className="message-form">

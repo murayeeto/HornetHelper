@@ -53,6 +53,21 @@
     left: 0;
     right: 0;
     padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.own-message {
+    align-items: flex-end;
+}
+
+.message-sender {
+    font-size: 12px;
+    color: #8e8e93;
+    margin-bottom: 4px;
+    padding: 0 2px;
+    max-width: 70%;
 }
 
 .message-content {
@@ -64,29 +79,11 @@
     font-size: 14px;
     max-width: 70%;
     word-wrap: break-word;
-    margin-left: 10px;
 }
 
 .own-message .message-content {
     background-color: #0b84ff;
     color: white;
-    float: right;
-    margin-right: 10px;
-    margin-left: 0;
-}
-
-.message-time {
-    font-size: 11px;
-    color: #8e8e93;
-    margin-top: 4px;
-    display: block;
-    padding-left: 10px;
-}
-
-.own-message .message-time {
-    color: rgba(0, 0, 0, 0.5);
-    text-align: right;
-    padding-right: 10px;
 }
 
 .message-form {
