@@ -41,6 +41,13 @@ const Calendar = () => {
   for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
+  const getDayEvents = (day) => {
+    if (!day) return [];
+    const date = new Date(year, currentDate.getMonth(), day);
+    const dateKey = formatDateKey(date);
+    return events[dateKey] ? Object.values(events[dateKey]) : [];
+  };
+
   const changeMonth = (offset) => {
     setCurrentDate(new Date(year, currentDate.getMonth() + offset, 1));
     setSelectedDay(null);
@@ -256,27 +263,41 @@ const Calendar = () => {
                 ))}
 
                 {days.map((day, i) => (
-                  <div 
-                    key={day || `empty-${i}`}
-                    className={`day-cell-exact ${
-                      !day ? 'empty' : 
-                      isCurrentDay(day) ? 'today' : 
-                      ''
-                    }`}
-                    data-weekend={day && [0, 6].includes(new Date(year, currentDate.getMonth(), day).getDay())}
-                    style={{ height: cellHeight }}
-                    onClick={() => handleDayClick(day)}
-                  >
-                    {day && (
-                      <>
-                        <div className="day-number-exact">{day}</div>
-                        {isCurrentDay(day) && (
-                          <div className="today-indicator">Today</div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
+  <div 
+    key={day || `empty-${i}`}
+    className={`day-cell-exact ${
+      !day ? 'empty' : 
+      isCurrentDay(day) ? 'today' : 
+      ''
+    }`}
+    data-weekend={day && [0, 6].includes(new Date(year, currentDate.getMonth(), day).getDay())}
+    style={{ height: cellHeight }}
+    onClick={() => handleDayClick(day)}
+  >
+      {day && (
+    <>
+      <div className="day-number-exact">{day}</div>
+      {isCurrentDay(day) && (
+        <div className="today-indicator">Today</div>
+      )}
+      <div className="day-events-preview">
+        {getDayEvents(day)
+          .slice(0, 3)
+          .map(event => (
+            <div 
+              key={event.id}
+              className="event-preview"
+              style={{ '--event-color': event.color }}
+              data-time={event.displayTime.replace(/:00 /, ' ').replace('AM', 'A').replace('PM', 'P')}
+            >
+              {event.title}
+            </div>
+          ))}
+      </div>
+    </>
+  )}
+        </div>
+      ))}
               </div>
             </div>
           </>
