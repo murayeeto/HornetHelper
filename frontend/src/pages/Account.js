@@ -5,7 +5,7 @@ import './Account.css';
 const DEFAULT_PROFILE_PIC = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
 
 const Account = () => {
-  const { user, updateMajor, updateDisplayName, updateProfilePicture } = useAuth();
+  const { user, updateMajor, updateDisplayName, updateProfilePicture, upgradeToHornet } = useAuth();
   const [major, setMajor] = useState(user?.major || '');
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isEditingMajor, setIsEditingMajor] = useState(false);
@@ -220,12 +220,24 @@ const Account = () => {
           <h2>Account Details</h2>
           <div className="profile-info">
             <div className="info-group">
-              <label>Account Created</label>
-              <p>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div className="info-group">
-              <label>Last Login</label>
-              <p>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'N/A'}</p>
+              <label>Account Status</label>
+              <div className="info-display">
+                <p>{user.isHornet ? 'Hornet' : 'Standard'}</p>
+                {!user.isHornet && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Would you like to upgrade to Hornet status?')) {
+                        upgradeToHornet()
+                          .then(() => setMessage('Successfully upgraded to Hornet!'))
+                          .catch(error => setMessage(error.message));
+                      }
+                    }}
+                    className="edit-btn"
+                  >
+                    ↑ Upgrade
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
