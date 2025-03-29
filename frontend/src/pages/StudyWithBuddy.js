@@ -16,6 +16,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 import firebase from '../firebase';
+import dsuCampusLocations from '../data/dsuCampusLocations';
 
 function HomeScreen({ setScreen }) {
     return (
@@ -187,7 +188,7 @@ function DuoSessions({ setScreen }) {
                     ...(currentEvents[dateKey] || {}),
                     [timeValue]: {
                         id: Date.now(),
-                        title: `Study Session: ${sessionData.subject}`,
+                        title: `Study Session: ${sessionData.course}`,
                         color: '#00A7E3',
                         displayTime: `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
                     }
@@ -250,10 +251,10 @@ function DuoSessions({ setScreen }) {
         e.preventDefault();
         try {
             const sessionData = {
-                subject,
+                course: selectedCourse,
                 dateTime,
                 location,
-                course: selectedCourse,
+                subject: "",
                 gender,
                 userId: user.uid,
                 displayName: user.displayName,
@@ -299,12 +300,12 @@ function DuoSessions({ setScreen }) {
                     <h2>Create new session</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label>Subject</label>
+                            <label>Course</label>
                             <input
                                 type="text"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                placeholder="Enter subject"
+                                value={selectedCourse}
+                                onChange={(e) => setSelectedCourse(e.target.value)}
+                                placeholder="Enter course (e.g. COMP 3700)"
                             />
                         </div>
                         <div className="form-group">
@@ -317,12 +318,17 @@ function DuoSessions({ setScreen }) {
                         </div>
                         <div className="form-group">
                             <label>Location</label>
-                            <input
-                                type="text"
+                            <select
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                placeholder="Enter location"
-                            />
+                            >
+                                <option value="">Select location</option>
+                                {dsuCampusLocations.map(loc => (
+                                    <option key={loc.name} value={loc.name}>
+                                        {loc.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <button type="submit" className="submit-btn">Submit</button>
                     </form>
@@ -345,15 +351,17 @@ function DuoSessions({ setScreen }) {
 
             <div className="filters">
                 <div className="filter-group">
-                    <label>Course:</label>
-                    <select 
-                        value={selectedCourse}
-                        onChange={(e) => setSelectedCourse(e.target.value)}
+                    <label>Subject:</label>
+                    <select
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
                     >
-                        <option value="">Select course</option>
-                        <option value="networking">Computer Networking</option>
-                        <option value="programming">Programming</option>
-                        <option value="database">Database Systems</option>
+                        <option value="">Select subject</option>
+                        <option value="computer-science">Computer Science</option>
+                        <option value="mathematics">Mathematics</option>
+                        <option value="physics">Physics</option>
+                        <option value="chemistry">Chemistry</option>
+                        <option value="biology">Biology</option>
                     </select>
                 </div>
 
@@ -409,7 +417,7 @@ function DuoSessions({ setScreen }) {
                                     className="profile-img"
                                 />
                                 <h3>{session.displayName}</h3>
-                                <p>Course: {session.course || session.subject}</p>
+                                <p>Course: {session.course}</p>
                                 <p>Time: {new Date(session.dateTime).toLocaleString()}</p>
                                 <p>Place: {session.location}</p>
                                 <div className="participants-list">
