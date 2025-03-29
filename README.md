@@ -24,3 +24,8 @@ path = kagglehub.dataset_download("polartech/us-college-textbooks-and-courses-da
 - Educational resource recommendations:
   - Educational videos from YouTube
   - Relevant textbooks from the dataset
+- Comprehensive FAQ section with:
+  - General platform information
+  - Study group guidance
+  - Premium features details
+  - Interactive AI demo
