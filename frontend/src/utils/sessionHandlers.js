@@ -1,7 +1,7 @@
 import { doc, setDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp, getDoc } from 'firebase/firestore';
 import firebase from '../firebase';
 
-export const useSessionHandlers = (user, sessions, setSessions, collectionName) => {
+export const useSessionHandlers = (user, sessions, setSessions, collectionName, onSessionUpdate) => {
     const handleJoinSession = async (sessionId) => {
         try {
             const sessionRef = doc(firebase.db, collectionName, sessionId);
@@ -14,25 +14,43 @@ export const useSessionHandlers = (user, sessions, setSessions, collectionName) 
                 return;
             }
 
+            // Get current session data
+            const sessionDoc = await getDoc(sessionRef);
+            const currentData = sessionDoc.data();
+            
+            // Create or update participant info
             const newParticipant = {
                 uid: user.uid,
                 displayName: user.displayName,
                 photoURL: user.photoURL
             };
 
-            const updatedParticipants = [...(session.participants || []), newParticipant];
+            // Remove existing participant entry if it exists (to update their info)
+            let updatedParticipants = [...(currentData.participants || [])].filter(p => p.uid !== user.uid);
+            
+            // Add the participant with current info
+            updatedParticipants.push(newParticipant);
             const isFull = updatedParticipants.length >= maxParticipants;
 
-            await setDoc(sessionRef, {
-                participants: arrayUnion(newParticipant),
+            // Update session data
+            const updates = {
+                participants: updatedParticipants,
                 full: isFull,
                 updatedAt: serverTimestamp()
-            }, { merge: true });
+            };
+
+            // If user is the session owner, update their info
+            if (currentData.userId === user.uid) {
+                updates.displayName = user.displayName;
+                updates.photoURL = user.photoURL;
+            }
+
+            await setDoc(sessionRef, updates, { merge: true });
 
             // Add to calendar
             await addToCalendar(session, collectionName, user);
 
-            // Update local state
+            // Update local state and trigger refresh
             setSessions(prevSessions =>
                 prevSessions.map(s =>
                     s.id === sessionId
@@ -44,6 +62,10 @@ export const useSessionHandlers = (user, sessions, setSessions, collectionName) 
                         : s
                 )
             );
+            
+            if (onSessionUpdate) {
+                await onSessionUpdate();
+            }
         } catch (error) {
             console.error("Error joining session:", error);
         }
@@ -57,17 +79,20 @@ export const useSessionHandlers = (user, sessions, setSessions, collectionName) 
             // Remove from calendar
             await removeFromCalendar(session, user);
             
+            // Get current session data
+            const sessionDoc = await getDoc(sessionRef);
+            const currentData = sessionDoc.data();
+            
+            // Filter out the user by uid only
+            const updatedParticipants = currentData.participants.filter(p => p.uid !== user.uid);
+            
             await setDoc(sessionRef, {
-                participants: arrayRemove({
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
-                }),
+                participants: updatedParticipants,
                 full: false,
                 updatedAt: serverTimestamp()
             }, { merge: true });
 
-            // Update local state
+            // Update local state and trigger refresh
             setSessions(prevSessions =>
                 prevSessions.map(s =>
                     s.id === sessionId
@@ -79,6 +104,10 @@ export const useSessionHandlers = (user, sessions, setSessions, collectionName) 
                         : s
                 )
             );
+
+            if (onSessionUpdate) {
+                await onSessionUpdate();
+            }
         } catch (error) {
             console.error("Error leaving session:", error);
         }
@@ -95,10 +124,14 @@ export const useSessionHandlers = (user, sessions, setSessions, collectionName) 
             // Delete session
             await deleteDoc(sessionRef);
 
-            // Update local state
+            // Update local state and trigger refresh
             setSessions(prevSessions =>
                 prevSessions.filter(s => s.id !== sessionId)
             );
+
+            if (onSessionUpdate) {
+                await onSessionUpdate();
+            }
         } catch (error) {
             console.error("Error disbanding session:", error);
         }

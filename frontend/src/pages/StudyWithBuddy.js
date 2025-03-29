@@ -12,7 +12,9 @@ import {
     orderBy,
     serverTimestamp,
     doc,
-    getDoc
+    getDoc,
+    setDoc,
+    writeBatch
 } from 'firebase/firestore';
 import firebase from '../firebase';
 import dsuCampusLocations from '../data/dsuCampusLocations';
@@ -69,10 +71,71 @@ function DuoSessions({ setScreen }) {
     const [filteredSessions, setFilteredSessions] = useState([]);
     const [showFiltered, setShowFiltered] = useState(false);
 
-    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'sessions');
+    const fetchSessions = async () => {
+        try {
+            const sessionsRef = collection(firebase.db, 'sessions');
+            const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const sessionData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setSessions(sessionData);
+            setFilteredSessions(sessionData);
+        } catch (error) {
+            console.error("Error fetching sessions:", error);
+        }
+    };
 
+    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'sessions', fetchSessions);
     // Get all majors from all departments
     const allMajors = Object.values(departmentsAndMajors).flat();
+
+    // Update sessions when user profile changes
+    useEffect(() => {
+        if (!user) return;
+
+        const updateUserSessions = async () => {
+            const updatedSessions = sessions.map(session => {
+                // Update session owner info
+                if (session.userId === user.uid) {
+                    session.displayName = user.displayName;
+                    session.photoURL = user.photoURL;
+                }
+                
+                // Update participant info
+                session.participants = session.participants.map(participant => {
+                    if (participant.uid === user.uid) {
+                        return {
+                            ...participant,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL
+                        };
+                    }
+                    return participant;
+                });
+                
+                return session;
+            });
+
+            // Update state
+            setSessions(updatedSessions);
+            
+            // Update Firebase
+            for (const session of updatedSessions) {
+                if (session.userId === user.uid || session.participants.some(p => p.uid === user.uid)) {
+                    const sessionRef = doc(firebase.db, 'sessions', session.id);
+                    await setDoc(sessionRef, {
+                        displayName: session.userId === user.uid ? user.displayName : session.displayName,
+                        photoURL: session.userId === user.uid ? user.photoURL : session.photoURL,
+                        participants: session.participants
+                    }, { merge: true });
+                }
+            }
+        };
+
+        updateUserSessions();
+    }, [user?.displayName, user?.photoURL]);
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -451,7 +514,23 @@ function GroupSessions({ setScreen }) {
     const [showFiltered, setShowFiltered] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
 
-    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'groupSessions');
+    const fetchSessions = async () => {
+        try {
+            const sessionsRef = collection(firebase.db, 'groupSessions');
+            const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const sessionData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setSessions(sessionData);
+            setFilteredSessions(sessionData);
+        } catch (error) {
+            console.error("Error fetching sessions:", error);
+        }
+    };
+
+    const { handleJoinSession, handleLeaveSession, handleDisbandSession } = useSessionHandlers(user, sessions, setSessions, 'groupSessions', fetchSessions);
 
     const handleCapacityClick = (session, event) => {
         event.stopPropagation();
@@ -485,27 +564,72 @@ function GroupSessions({ setScreen }) {
         return () => document.head.removeChild(style);
     }, []);
 
+    // Update sessions when user profile changes
+    useEffect(() => {
+        if (!user) return;
+
+        const updateUserSessions = async () => {
+            try {
+                // Get all sessions where user is owner or participant
+                const sessionsRef = collection(firebase.db, 'groupSessions');
+                const q = query(sessionsRef);
+                const querySnapshot = await getDocs(q);
+                
+                const batch = writeBatch(firebase.db);
+                let needsUpdate = false;
+
+                querySnapshot.forEach(doc => {
+                    const session = doc.data();
+                    if (session.userId === user.uid || session.participants?.some(p => p.uid === user.uid)) {
+                        needsUpdate = true;
+                        const sessionRef = doc.ref;
+                        
+                        // Update owner info if user is owner
+                        if (session.userId === user.uid) {
+                            batch.update(sessionRef, {
+                                displayName: user.displayName,
+                                photoURL: user.photoURL
+                            });
+                        }
+                        
+                        // Update participant info
+                        const updatedParticipants = session.participants.map(p =>
+                            p.uid === user.uid
+                                ? { ...p, displayName: user.displayName, photoURL: user.photoURL }
+                                : p
+                        );
+                        
+                        batch.update(sessionRef, { participants: updatedParticipants });
+                    }
+                });
+
+                if (needsUpdate) {
+                    await batch.commit();
+                    await fetchSessions();
+                }
+            } catch (error) {
+                console.error("Error updating sessions:", error);
+            }
+        };
+
+        updateUserSessions();
+    }, [user?.displayName, user?.photoURL]);
+
     // Get all majors from all departments
     const allMajors = Object.values(departmentsAndMajors).flat();
 
+
+    // Initial fetch
     useEffect(() => {
-        const fetchSessions = async () => {
-            try {
-                const sessionsRef = collection(firebase.db, 'groupSessions');
-                const q = query(sessionsRef, orderBy('createdAt', 'desc'));
-                const querySnapshot = await getDocs(q);
-                const sessionData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setSessions(sessionData);
-                setFilteredSessions(sessionData);
-            } catch (error) {
-                console.error("Error fetching sessions:", error);
-            }
-        };
         fetchSessions();
     }, []);
+
+    // Fetch after profile updates
+    useEffect(() => {
+        if (user?.displayName) {
+            fetchSessions();
+        }
+    }, [user?.displayName, user?.photoURL]);
 
     useEffect(() => {
         if (showFiltered && selectedDepartment) {
