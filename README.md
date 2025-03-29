@@ -120,7 +120,8 @@ hornet-helper/
 
 - User authentication with Google Sign-In
 - Protected routes requiring authentication
-- User profiles with major field
+- User profiles with major selection dropdown
+- White text on blue backgrounds for better readability
 - Calendar functionality
 - AI solutions category
 - Responsive design that works on desktop and mobile
