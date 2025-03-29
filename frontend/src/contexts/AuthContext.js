@@ -38,8 +38,17 @@ export function AuthProvider({ children }) {
       const provider = new GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       
-      const result = await signInWithPopup(firebase.auth, provider);
+      const result = await signInWithPopup(firebase.auth, provider)
+        .catch(error => {
+          if (error.code === 'auth/popup-blocked') {
+            alert('Please allow popups for this website to sign in with Google');
+          }
+          throw error;
+        });
       
       const photoURL = result.user.photoURL?.replace('s96-c', 's400-c') || null;
       
